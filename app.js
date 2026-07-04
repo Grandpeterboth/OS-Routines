@@ -1,3 +1,29 @@
+// Icônes par défaut
+const svgLibrary = {
+  'boite': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`,
+  'menage': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 7h7l-5.6 4.3 2.1 6.7-5.5-4-5.5 4 2.1-6.7L2 9h7z"/></svg>`,
+  'cuisine': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 3 18 18"/><path d="m14 8 2.2 2.2c.4.4.4 1 0 1.4l-6.4 6.4c-.4.4-1 .4-1.4 0L6.2 15.8c-.4-.4-.4-1 0-1.4l6.4-6.4c.4-.4 1-.4 1.4 0z"/></svg>`,
+  'sport': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11.5V15"/><path d="M6 11.5V15"/><path d="M6.5 7.5 17.5 7.5"/><path d="M2.5 11.5 5.5 11.5"/><path d="M18.5 11.5 21.5 11.5"/><path d="M2 15 22 15"/></svg>`,
+  'briefcase': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`,
+  'heart': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
+  'book': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>`,
+  'music': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`,
+  'car': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="10" width="20" height="10" rx="2" ry="2"/><path d="M19 10l-2-6H7L5 10"/><circle cx="7" cy="15" r="1.5"/><circle cx="17" cy="15" r="1.5"/></svg>`,
+  'sun': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`
+};
+
+const colorPalette = [
+  '#0052FF', '#00C853', '#FF6D00', '#E11D48', 
+  '#7C3AED', '#DB2777', '#059669', '#D97706', 
+  '#2563EB', '#4F46E5', '#14B8A6', '#F59E0B'
+];
+
+const defaultCategories = [
+  { id: 'boite', name: 'Boîte Entrée', color: '#0052FF', iconType: 'svg', iconVal: 'boite' },
+  { id: 'menage', name: 'Ménage', color: '#00C853', iconType: 'svg', iconVal: 'menage' },
+  { id: 'cuisine', name: 'Cuisine', color: '#FF6D00', iconType: 'svg', iconVal: 'cuisine' }
+];
+
 const defaultRoutines = [
   { id: '1', name: 'ENT/msg', cat: 'boite', days: [1,2,3,4,5] },
   { id: '2', name: 'webmel/msg', cat: 'boite', days: [0,1,2,3,4,5,6] },
@@ -18,21 +44,17 @@ const defaultRoutines = [
   { id: '15', name: 'Courses communes', cat: 'cuisine', days: [5] }
 ];
 
-const categoryLabels = {
-  boite: 'Boîte Entrée',
-  menage: 'Ménage',
-  cuisine: 'Cuisine'
-};
-
 const dayNames = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 const checkIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
 
 class App {
   constructor() {
+    this.categories = [];
     this.routines = [];
-    this.history = {}; // { 'YYYY-MM-DD': ['id1', 'id2'] }
+    this.history = {}; 
     this.currentDateStr = this.getTodayStr();
     this.currentTab = 'today';
+    this.currentManageTab = 'routines';
     
     this.init();
   }
@@ -42,7 +64,6 @@ class App {
     this.setupListeners();
     this.render();
     
-    // Vérification du changement de jour toutes les minutes
     setInterval(() => {
       const newDateStr = this.getTodayStr();
       if (newDateStr !== this.currentDateStr) {
@@ -58,12 +79,20 @@ class App {
   }
   
   loadData() {
+    const savedCategories = localStorage.getItem('os-categories');
+    if (savedCategories) {
+      this.categories = JSON.parse(savedCategories);
+    } else {
+      this.categories = [...defaultCategories];
+      localStorage.setItem('os-categories', JSON.stringify(this.categories));
+    }
+    
     const savedRoutines = localStorage.getItem('os-routines');
     if (savedRoutines) {
       this.routines = JSON.parse(savedRoutines);
     } else {
       this.routines = [...defaultRoutines];
-      this.saveRoutines();
+      localStorage.setItem('os-routines', JSON.stringify(this.routines));
     }
     
     const savedHistory = localStorage.getItem('os-history');
@@ -72,11 +101,9 @@ class App {
     }
   }
   
-  saveRoutines() {
+  saveData() {
+    localStorage.setItem('os-categories', JSON.stringify(this.categories));
     localStorage.setItem('os-routines', JSON.stringify(this.routines));
-  }
-  
-  saveHistory() {
     localStorage.setItem('os-history', JSON.stringify(this.history));
   }
   
@@ -93,7 +120,7 @@ class App {
       completedToday.push(id);
     }
     
-    this.saveHistory();
+    this.saveData();
     this.render();
   }
   
@@ -102,7 +129,6 @@ class App {
   }
   
   setupListeners() {
-    // Sélection de jours dans la modale
     document.querySelectorAll('.day-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.target.classList.toggle('selected');
@@ -112,16 +138,41 @@ class App {
   
   switchTab(tabId) {
     this.currentTab = tabId;
-    
-    // Update nav classes
     document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
     event.currentTarget.classList.add('active');
     
-    // Update views
     document.querySelectorAll('.view-section').forEach(view => view.classList.remove('active'));
     document.getElementById(`view-${tabId}`).classList.add('active');
     
     this.render();
+  }
+  
+  switchManageTab(tabId) {
+    this.currentManageTab = tabId;
+    document.querySelectorAll('.seg-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(`seg-${tabId}`).classList.add('active');
+    
+    if (tabId === 'routines') {
+      document.getElementById('manage-routines-section').style.display = 'block';
+      document.getElementById('manage-categories-section').style.display = 'none';
+      this.renderManageRoutines();
+    } else {
+      document.getElementById('manage-routines-section').style.display = 'none';
+      document.getElementById('manage-categories-section').style.display = 'block';
+      this.renderManageCategories();
+    }
+  }
+  
+  getCategoryInfo(catId) {
+    return this.categories.find(c => c.id === catId) || this.categories[0];
+  }
+  
+  renderIcon(cat) {
+    if (cat.iconType === 'photo' && cat.iconVal) {
+      return `<img src="${cat.iconVal}" alt="${cat.name}">`;
+    } else {
+      return svgLibrary[cat.iconVal] || svgLibrary['boite'];
+    }
   }
   
   render() {
@@ -138,27 +189,23 @@ class App {
       this.updateProgress(todayTasks);
     } else if (this.currentTab === 'all') {
       this.renderTaskList('all-container', this.routines, false);
-      this.updateProgress(todayTasks); // Keep progress logic based on today's tasks
+      this.updateProgress(todayTasks);
     } else if (this.currentTab === 'manage') {
-      this.renderManageList();
+      if (this.currentManageTab === 'routines') {
+        this.renderManageRoutines();
+      } else {
+        this.renderManageCategories();
+      }
     }
   }
   
   updateProgress(todayTasks) {
-    if (todayTasks.length === 0) {
-      document.getElementById('progress-bar').style.width = '100%';
-      document.getElementById('progress-text').textContent = "Aucune tâche aujourd'hui !";
-      return;
-    }
-    
     let completed = 0;
-    todayTasks.forEach(task => {
-      if (this.isCompleted(task.id)) completed++;
-    });
+    todayTasks.forEach(task => { if (this.isCompleted(task.id)) completed++; });
     
-    const percent = Math.round((completed / todayTasks.length) * 100);
+    const percent = todayTasks.length === 0 ? 100 : Math.round((completed / todayTasks.length) * 100);
     document.getElementById('progress-bar').style.width = `${percent}%`;
-    document.getElementById('progress-text').textContent = `${percent}% complété (${completed}/${todayTasks.length})`;
+    document.getElementById('progress-text').textContent = todayTasks.length === 0 ? "Aucune tâche aujourd'hui !" : `${percent}% complété (${completed}/${todayTasks.length})`;
   }
   
   renderTaskList(containerId, tasks, filterEmptyCategories) {
@@ -170,31 +217,30 @@ class App {
       return;
     }
     
-    const byCategory = { boite: [], menage: [], cuisine: [] };
+    const byCategory = {};
+    this.categories.forEach(c => byCategory[c.id] = []);
     tasks.forEach(t => {
       if(byCategory[t.cat]) byCategory[t.cat].push(t);
     });
     
-    Object.keys(byCategory).forEach(cat => {
-      const catTasks = byCategory[cat];
+    this.categories.forEach(cat => {
+      const catTasks = byCategory[cat.id];
       if (filterEmptyCategories && catTasks.length === 0) return;
+      if (!filterEmptyCategories && catTasks.length === 0) return; // don't show empty categories even in "All" view
       
       const section = document.createElement('div');
       section.className = 'category-section';
       
-      let icon = '';
-      if(cat === 'boite') icon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`;
-      if(cat === 'menage') icon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 7h7l-5.6 4.3 2.1 6.7-5.5-4-5.5 4 2.1-6.7L2 9h7z"/></svg>`;
-      if(cat === 'cuisine') icon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 3 18 18"/><path d="m14 8 2.2 2.2c.4.4.4 1 0 1.4l-6.4 6.4c-.4.4-1 .4-1.4 0L6.2 15.8c-.4-.4-.4-1 0-1.4l6.4-6.4c.4-.4 1-.4 1.4 0z"/></svg>`;
+      const iconHtml = this.renderIcon(cat);
       
-      let html = `<div class="category-title ${cat}">${icon} ${categoryLabels[cat]}</div><div class="task-list">`;
+      let html = `<div class="category-title" style="--cat-color: ${cat.color}"><div class="cat-icon-display">${iconHtml}</div> ${cat.name}</div><div class="task-list">`;
       
       catTasks.forEach(task => {
         const checked = this.isCompleted(task.id);
         const daysText = task.days.length === 7 ? 'Tous les jours' : task.days.map(d => dayNames[d]).join(', ');
         
         html += `
-          <div class="task-card ${checked ? 'checked' : ''}" data-cat="${task.cat}" onclick="app.toggleTask('${task.id}')">
+          <div class="task-card ${checked ? 'checked' : ''}" style="--cat-color: ${cat.color}" onclick="app.toggleTask('${task.id}')">
             <div class="task-info">
               <span class="task-name">${task.name}</span>
               <span class="task-days">${daysText}</span>
@@ -209,18 +255,20 @@ class App {
     });
   }
   
-  renderManageList() {
-    const container = document.getElementById('manage-container');
+  // --- Routines Management ---
+  renderManageRoutines() {
+    const container = document.getElementById('manage-routines-container');
     container.innerHTML = '';
     
     this.routines.forEach(task => {
+      const cat = this.getCategoryInfo(task.cat);
       const daysText = task.days.length === 7 ? 'Tous les jours' : task.days.map(d => dayNames[d]).join(', ');
       const div = document.createElement('div');
       div.className = 'edit-task-card';
       div.innerHTML = `
         <div class="task-info">
           <span class="task-name" style="color:var(--text-main)">${task.name}</span>
-          <span class="task-days">${categoryLabels[task.cat]} • ${daysText}</span>
+          <span class="task-days">${cat.name} • ${daysText}</span>
         </div>
         <div class="edit-actions">
           <button class="icon-btn primary" onclick="app.editRoutine('${task.id}')">
@@ -237,36 +285,37 @@ class App {
   
   showRoutineModal(id = null) {
     const modal = document.getElementById('modal-routine');
-    const title = document.getElementById('modal-title');
+    const title = document.getElementById('modal-routine-title');
+    const selectCat = document.getElementById('form-routine-cat');
+    
+    // Populate categories select
+    selectCat.innerHTML = this.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    
     document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('selected'));
     
     if (id) {
       const routine = this.routines.find(r => r.id === id);
       title.textContent = "Modifier la routine";
-      document.getElementById('form-id').value = routine.id;
-      document.getElementById('form-name').value = routine.name;
-      document.getElementById('form-cat').value = routine.cat;
+      document.getElementById('form-routine-id').value = routine.id;
+      document.getElementById('form-routine-name').value = routine.name;
+      selectCat.value = routine.cat;
       routine.days.forEach(d => {
         document.querySelector(`.day-btn[data-day="${d}"]`).classList.add('selected');
       });
     } else {
       title.textContent = "Nouvelle Routine";
-      document.getElementById('form-id').value = '';
-      document.getElementById('form-name').value = '';
-      document.getElementById('form-cat').value = 'boite';
+      document.getElementById('form-routine-id').value = '';
+      document.getElementById('form-routine-name').value = '';
+      if(this.categories.length > 0) selectCat.value = this.categories[0].id;
     }
     
     modal.classList.add('active');
   }
   
-  closeModal(modalId) {
-    document.getElementById(modalId).classList.remove('active');
-  }
-  
   saveRoutine() {
-    const id = document.getElementById('form-id').value || Date.now().toString();
-    const name = document.getElementById('form-name').value.trim();
-    const cat = document.getElementById('form-cat').value;
+    const id = document.getElementById('form-routine-id').value || Date.now().toString();
+    const name = document.getElementById('form-routine-name').value.trim();
+    const cat = document.getElementById('form-routine-cat').value;
     
     const days = [];
     document.querySelectorAll('.day-btn.selected').forEach(b => {
@@ -279,7 +328,6 @@ class App {
     }
     
     const routine = { id, name, cat, days };
-    
     const existingIndex = this.routines.findIndex(r => r.id === id);
     if (existingIndex > -1) {
       this.routines[existingIndex] = routine;
@@ -287,25 +335,198 @@ class App {
       this.routines.push(routine);
     }
     
-    this.saveRoutines();
+    this.saveData();
     this.closeModal('modal-routine');
     this.render();
   }
   
-  editRoutine(id) {
-    this.showRoutineModal(id);
-  }
+  editRoutine(id) { this.showRoutineModal(id); }
   
   deleteRoutine(id) {
     if (confirm("Supprimer cette routine ?")) {
       this.routines = this.routines.filter(r => r.id !== id);
-      this.saveRoutines();
+      this.saveData();
       this.render();
     }
   }
   
+  // --- Categories Management ---
+  renderManageCategories() {
+    const container = document.getElementById('manage-categories-container');
+    container.innerHTML = '';
+    
+    this.categories.forEach(cat => {
+      const iconHtml = this.renderIcon(cat);
+      const div = document.createElement('div');
+      div.className = 'edit-cat-card';
+      div.style.setProperty('--cat-color', cat.color);
+      div.innerHTML = `
+        <div class="task-info" style="flex-direction:row; align-items:center; gap: 10px;">
+          <div class="cat-icon-display" style="color: ${cat.color}">${iconHtml}</div>
+          <span class="task-name" style="color:var(--text-main)">${cat.name}</span>
+        </div>
+        <div class="edit-actions">
+          <button class="icon-btn primary" onclick="app.editCategory('${cat.id}')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="icon-btn danger" onclick="app.deleteCategory('${cat.id}')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+          </button>
+        </div>
+      `;
+      container.appendChild(div);
+    });
+  }
+  
+  showCategoryModal(id = null) {
+    const modal = document.getElementById('modal-category');
+    const title = document.getElementById('modal-cat-title');
+    
+    // Populate colors
+    const colorGrid = document.getElementById('color-grid');
+    colorGrid.innerHTML = colorPalette.map(color => 
+      `<div class="color-circle" data-color="${color}" style="background-color: ${color}" onclick="app.selectCatColor('${color}')"></div>`
+    ).join('');
+    
+    // Populate SVG icons
+    const iconGrid = document.getElementById('icon-grid');
+    iconGrid.innerHTML = Object.keys(svgLibrary).map(key => 
+      `<div class="icon-option" data-icon="${key}" onclick="app.selectCatIcon('${key}')">${svgLibrary[key]}</div>`
+    ).join('');
+    
+    document.getElementById('photo-preview-container').style.display = 'none';
+    
+    if (id) {
+      const cat = this.categories.find(c => c.id === id);
+      title.textContent = "Modifier la rubrique";
+      document.getElementById('form-cat-id').value = cat.id;
+      document.getElementById('form-cat-name').value = cat.name;
+      this.selectCatColor(cat.color);
+      
+      if (cat.iconType === 'svg') {
+        this.selectCatIcon(cat.iconVal);
+      } else if (cat.iconType === 'photo') {
+        this.setCatPhoto(cat.iconVal);
+      }
+    } else {
+      title.textContent = "Nouvelle Rubrique";
+      document.getElementById('form-cat-id').value = '';
+      document.getElementById('form-cat-name').value = '';
+      this.selectCatColor(colorPalette[0]);
+      this.selectCatIcon('sport');
+    }
+    
+    modal.classList.add('active');
+  }
+  
+  selectCatColor(color) {
+    document.getElementById('form-cat-color').value = color;
+    document.querySelectorAll('.color-circle').forEach(el => {
+      el.classList.toggle('selected', el.getAttribute('data-color') === color);
+    });
+  }
+  
+  selectCatIcon(iconKey) {
+    document.getElementById('form-cat-icon-type').value = 'svg';
+    document.getElementById('form-cat-icon-val').value = iconKey;
+    document.getElementById('photo-preview-container').style.display = 'none';
+    
+    document.querySelectorAll('.icon-option').forEach(el => {
+      el.classList.toggle('selected', el.getAttribute('data-icon') === iconKey);
+    });
+  }
+  
+  setCatPhoto(base64Data) {
+    document.getElementById('form-cat-icon-type').value = 'photo';
+    document.getElementById('form-cat-icon-val').value = base64Data;
+    
+    document.querySelectorAll('.icon-option').forEach(el => el.classList.remove('selected'));
+    
+    const previewContainer = document.getElementById('photo-preview-container');
+    const previewImg = document.getElementById('photo-preview');
+    previewImg.src = base64Data;
+    previewContainer.style.display = 'block';
+  }
+  
+  handlePhotoUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        // Redimensionner via Canvas pour économiser le LocalStorage
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const size = 150;
+        canvas.width = size;
+        canvas.height = size;
+        
+        // Crop centré
+        const minDim = Math.min(img.width, img.height);
+        const sx = (img.width - minDim) / 2;
+        const sy = (img.height - minDim) / 2;
+        
+        ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
+        
+        const resizedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+        this.setCatPhoto(resizedBase64);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+  
+  saveCategory() {
+    const id = document.getElementById('form-cat-id').value || 'cat_' + Date.now().toString();
+    const name = document.getElementById('form-cat-name').value.trim();
+    const color = document.getElementById('form-cat-color').value;
+    const iconType = document.getElementById('form-cat-icon-type').value;
+    const iconVal = document.getElementById('form-cat-icon-val').value;
+    
+    if (!name) {
+      alert("Veuillez saisir un nom pour la rubrique.");
+      return;
+    }
+    
+    const cat = { id, name, color, iconType, iconVal };
+    const existingIndex = this.categories.findIndex(c => c.id === id);
+    if (existingIndex > -1) {
+      this.categories[existingIndex] = cat;
+    } else {
+      this.categories.push(cat);
+    }
+    
+    this.saveData();
+    this.closeModal('modal-category');
+    this.render();
+  }
+  
+  editCategory(id) { this.showCategoryModal(id); }
+  
+  deleteCategory(id) {
+    const routinesCount = this.routines.filter(r => r.cat === id).length;
+    if (routinesCount > 0) {
+      alert(`Impossible de supprimer cette rubrique car ${routinesCount} routine(s) y sont associées. Modifiez d'abord ces routines.`);
+      return;
+    }
+    
+    if (confirm("Supprimer cette rubrique ?")) {
+      this.categories = this.categories.filter(c => c.id !== id);
+      this.saveData();
+      this.render();
+    }
+  }
+
+  // --- Modals & Utils ---
+  closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+  }
+  
   showBackupModal() {
     const data = {
+      categories: this.categories,
       routines: this.routines,
       history: this.history
     };
@@ -326,10 +547,10 @@ class App {
       const data = JSON.parse(text);
       
       if (data.routines && data.history) {
+        this.categories = data.categories || defaultCategories;
         this.routines = data.routines;
         this.history = data.history;
-        this.saveRoutines();
-        this.saveHistory();
+        this.saveData();
         this.closeModal('modal-backup');
         this.render();
         alert("Restauration réussie !");

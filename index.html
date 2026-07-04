@@ -40,11 +40,28 @@
 
     <!-- View: Manage -->
     <div id="view-manage" class="view-section">
-      <button class="btn primary" onclick="app.showRoutineModal()" style="margin-bottom: 1.5rem;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Nouvelle Routine
-      </button>
-      <div id="manage-container"></div>
+      <div class="segmented-control">
+        <button class="seg-btn active" id="seg-routines" onclick="app.switchManageTab('routines')">Routines</button>
+        <button class="seg-btn" id="seg-categories" onclick="app.switchManageTab('categories')">Rubriques</button>
+      </div>
+
+      <!-- Manage Routines -->
+      <div id="manage-routines-section">
+        <button class="btn primary" onclick="app.showRoutineModal()" style="margin-bottom: 1.5rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nouvelle Routine
+        </button>
+        <div id="manage-routines-container"></div>
+      </div>
+
+      <!-- Manage Categories -->
+      <div id="manage-categories-section" style="display: none;">
+        <button class="btn primary" onclick="app.showCategoryModal()" style="margin-bottom: 1.5rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nouvelle Rubrique
+        </button>
+        <div id="manage-categories-container"></div>
+      </div>
     </div>
   </main>
 
@@ -67,27 +84,24 @@
   <!-- Modal: Edit/Add Routine -->
   <div class="modal-overlay" id="modal-routine">
     <div class="modal-content">
-      <h2 class="modal-title" id="modal-title">Nouvelle Routine</h2>
-      
-      <input type="hidden" id="form-id">
+      <h2 class="modal-title" id="modal-routine-title">Nouvelle Routine</h2>
+      <input type="hidden" id="form-routine-id">
       
       <div class="form-group">
-        <label for="form-name">Nom de la tâche</label>
-        <input type="text" id="form-name" class="form-control" placeholder="Ex: Faire la vaisselle">
+        <label for="form-routine-name">Nom de la tâche</label>
+        <input type="text" id="form-routine-name" class="form-control" placeholder="Ex: Faire la vaisselle">
       </div>
       
       <div class="form-group">
-        <label for="form-cat">Catégorie</label>
-        <select id="form-cat" class="form-control">
-          <option value="boite">Boîte Entrée (Bleu)</option>
-          <option value="menage">Ménage (Vert)</option>
-          <option value="cuisine">Cuisine (Orange)</option>
+        <label for="form-routine-cat">Rubrique</label>
+        <select id="form-routine-cat" class="form-control">
+          <!-- Dynamically populated -->
         </select>
       </div>
       
       <div class="form-group">
         <label>Jours de récurrence</label>
-        <div class="days-selector" id="form-days">
+        <div class="days-selector" id="form-routine-days">
           <button type="button" class="day-btn" data-day="1">L</button>
           <button type="button" class="day-btn" data-day="2">M</button>
           <button type="button" class="day-btn" data-day="3">M</button>
@@ -101,6 +115,53 @@
       <div class="modal-actions">
         <button class="btn secondary" onclick="app.closeModal('modal-routine')">Annuler</button>
         <button class="btn primary" onclick="app.saveRoutine()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Edit/Add Category -->
+  <div class="modal-overlay" id="modal-category">
+    <div class="modal-content">
+      <h2 class="modal-title" id="modal-cat-title">Nouvelle Rubrique</h2>
+      <input type="hidden" id="form-cat-id">
+      
+      <div class="form-group">
+        <label for="form-cat-name">Nom de la rubrique</label>
+        <input type="text" id="form-cat-name" class="form-control" placeholder="Ex: Sport, Administration...">
+      </div>
+      
+      <div class="form-group">
+        <label>Couleur</label>
+        <div class="color-grid" id="color-grid">
+          <!-- Dynamically populated -->
+        </div>
+        <input type="hidden" id="form-cat-color">
+      </div>
+      
+      <div class="form-group">
+        <label>Icône ou Photo</label>
+        <div class="icon-grid" id="icon-grid">
+          <!-- Dynamically populated -->
+        </div>
+        
+        <div style="margin-top: 1rem; text-align: center;">
+          <input type="file" id="cat-photo-upload" accept="image/*" style="display:none" onchange="app.handlePhotoUpload(event)">
+          <button class="btn secondary" onclick="document.getElementById('cat-photo-upload').click()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Choisir une photo depuis la galerie
+          </button>
+          <div id="photo-preview-container" style="display: none; margin-top: 10px;">
+            <img id="photo-preview" src="" alt="Aperçu" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color);">
+            <input type="hidden" id="form-cat-photo-data">
+          </div>
+        </div>
+        <input type="hidden" id="form-cat-icon-type">
+        <input type="hidden" id="form-cat-icon-val">
+      </div>
+      
+      <div class="modal-actions">
+        <button class="btn secondary" onclick="app.closeModal('modal-category')">Annuler</button>
+        <button class="btn primary" onclick="app.saveCategory()">Enregistrer</button>
       </div>
     </div>
   </div>

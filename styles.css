@@ -4,15 +4,7 @@
   --text-main: #1e293b;
   --text-muted: #64748b;
   --border-color: #e2e8f0;
-  
-  --color-boite: #0052FF;
-  --color-boite-light: #eff4ff;
-  
-  --color-menage: #00C853;
-  --color-menage-light: #e6f9ec;
-  
-  --color-cuisine: #FF6D00;
-  --color-cuisine-light: #fff0e6;
+  --color-primary: #0052FF;
 }
 
 * {
@@ -61,7 +53,7 @@ header {
 }
 
 .progress-bar {
-  background: linear-gradient(90deg, var(--color-boite), var(--color-menage));
+  background: var(--color-primary);
   height: 100%;
   width: 0%;
   border-radius: 99px;
@@ -105,7 +97,7 @@ nav {
 }
 
 .nav-item.active {
-  color: var(--color-boite);
+  color: var(--color-primary);
 }
 
 .nav-item svg {
@@ -134,6 +126,32 @@ main {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Segmented Control */
+.segmented-control {
+  display: flex;
+  background: var(--border-color);
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 1.5rem;
+}
+.seg-btn {
+  flex: 1;
+  padding: 0.5rem;
+  border: none;
+  background: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 8px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.seg-btn.active {
+  background: var(--card-bg);
+  color: var(--text-main);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
 .category-section {
   margin-bottom: 1.5rem;
 }
@@ -147,11 +165,24 @@ main {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  color: var(--cat-color, var(--text-main));
 }
 
-.category-title.boite { color: var(--color-boite); }
-.category-title.menage { color: var(--color-menage); }
-.category-title.cuisine { color: var(--color-cuisine); }
+.cat-icon-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cat-icon-display svg {
+  width: 18px;
+  height: 18px;
+}
+.cat-icon-display img {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+}
 
 .task-list {
   display: flex;
@@ -168,6 +199,7 @@ main {
   justify-content: space-between;
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   border: 1px solid var(--border-color);
+  border-left: 4px solid var(--cat-color, var(--border-color));
   transition: transform 0.2s, box-shadow 0.2s;
   cursor: pointer;
 }
@@ -217,27 +249,13 @@ main {
   text-decoration: line-through;
 }
 
-.task-card.checked[data-cat="boite"] .task-checkbox {
-  background: var(--color-boite);
-  border-color: var(--color-boite);
-  color: white;
-}
-.task-card.checked[data-cat="menage"] .task-checkbox {
-  background: var(--color-menage);
-  border-color: var(--color-menage);
-  color: white;
-}
-.task-card.checked[data-cat="cuisine"] .task-checkbox {
-  background: var(--color-cuisine);
-  border-color: var(--color-cuisine);
+.task-card.checked .task-checkbox {
+  background: var(--cat-color);
+  border-color: var(--cat-color);
   color: white;
 }
 
-.task-card[data-cat="boite"] { border-left: 4px solid var(--color-boite); }
-.task-card[data-cat="menage"] { border-left: 4px solid var(--color-menage); }
-.task-card[data-cat="cuisine"] { border-left: 4px solid var(--color-cuisine); }
-
-.edit-task-card {
+.edit-task-card, .edit-cat-card {
   background: var(--card-bg);
   border-radius: 12px;
   padding: 1rem;
@@ -246,6 +264,9 @@ main {
   align-items: center;
   justify-content: space-between;
   border: 1px solid var(--border-color);
+}
+.edit-cat-card {
+  border-left: 4px solid var(--cat-color);
 }
 
 .edit-actions {
@@ -267,7 +288,7 @@ main {
 }
 .icon-btn:hover { background: var(--bg-color); }
 .icon-btn.danger { color: #ef4444; }
-.icon-btn.primary { color: var(--color-boite); background: var(--color-boite-light); }
+.icon-btn.primary { color: var(--color-primary); }
 
 .btn {
   display: flex;
@@ -285,7 +306,7 @@ main {
 }
 
 .btn:active { transform: scale(0.98); }
-.btn.primary { background: var(--color-boite); color: white; }
+.btn.primary { background: var(--color-primary); color: white; }
 .btn.secondary { background: var(--border-color); color: var(--text-main); }
 
 .modal-overlay {
@@ -349,8 +370,8 @@ main {
 }
 .form-control:focus {
   outline: none;
-  border-color: var(--color-boite);
-  box-shadow: 0 0 0 3px var(--color-boite-light);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0,82,255,0.1);
 }
 
 .days-selector {
@@ -370,9 +391,53 @@ main {
   cursor: pointer;
 }
 .day-btn.selected {
-  background: var(--color-boite);
+  background: var(--color-primary);
   color: white;
-  border-color: var(--color-boite);
+  border-color: var(--color-primary);
+}
+
+.color-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.color-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 0.2s;
+}
+.color-circle:hover { transform: scale(1.1); }
+.color-circle.selected {
+  border-color: var(--text-main);
+  transform: scale(1.1);
+}
+
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+}
+.icon-option {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+.icon-option.selected {
+  border-color: var(--color-primary);
+  background: rgba(0,82,255,0.1);
+  color: var(--color-primary);
+}
+.icon-option svg {
+  width: 24px;
+  height: 24px;
 }
 
 .modal-actions {
