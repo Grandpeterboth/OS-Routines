@@ -561,6 +561,19 @@ class App {
       alert("Erreur de restauration. JSON invalide.");
     }
   }
+  
+  forceUpdate() {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) {
+          registration.unregister();
+        }
+        window.location.reload(true);
+      });
+    } else {
+      window.location.reload(true);
+    }
+  }
 }
 
 const app = new App();

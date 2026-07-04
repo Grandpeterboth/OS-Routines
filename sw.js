@@ -1,4 +1,4 @@
-const CACHE_NAME = 'os-routines-v2';
+const CACHE_NAME = 'os-routines-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
