@@ -50,6 +50,8 @@ const trashIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16
 const editIcon  = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
 const resetIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-8.31l5.67-5.67"/></svg>`;
 const refreshIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>`;
+const upIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>`;
+const downIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`;
 
 class App {
   constructor() {
@@ -534,7 +536,10 @@ class App {
     const container = document.getElementById('manage-categories-container');
     container.innerHTML = '';
 
-    this.categories.forEach(cat => {
+    this.categories.forEach((cat, index) => {
+      const isFirst = index === 0;
+      const isLast = index === this.categories.length - 1;
+      
       const iconHtml = this.renderIcon(cat);
       const div      = document.createElement('div');
       div.className  = 'edit-cat-card';
@@ -545,6 +550,8 @@ class App {
           <span class="task-name" style="color:var(--text-main)">${cat.name}</span>
         </div>
         <div class="edit-actions">
+          <button class="icon-btn" onclick="app.moveCategoryUp('${cat.id}')" ${isFirst ? 'disabled style="opacity:0.3; cursor:not-allowed;"' : ''} title="Monter">${upIcon}</button>
+          <button class="icon-btn" onclick="app.moveCategoryDown('${cat.id}')" ${isLast ? 'disabled style="opacity:0.3; cursor:not-allowed;"' : ''} title="Descendre">${downIcon}</button>
           <button class="icon-btn primary" onclick="app.editCategory('${cat.id}')">${editIcon}</button>
           <button class="icon-btn danger"  onclick="app.deleteCategory('${cat.id}')">${trashIcon}</button>
         </div>`;
@@ -659,6 +666,28 @@ class App {
     }
     if (confirm("Supprimer cette rubrique ?")) {
       this.categories = this.categories.filter(c => c.id !== id);
+      this.saveData();
+      this.render();
+    }
+  }
+
+  moveCategoryUp(id) {
+    const index = this.categories.findIndex(c => c.id === id);
+    if (index > 0) {
+      const temp = this.categories[index - 1];
+      this.categories[index - 1] = this.categories[index];
+      this.categories[index] = temp;
+      this.saveData();
+      this.render();
+    }
+  }
+
+  moveCategoryDown(id) {
+    const index = this.categories.findIndex(c => c.id === id);
+    if (index < this.categories.length - 1) {
+      const temp = this.categories[index + 1];
+      this.categories[index + 1] = this.categories[index];
+      this.categories[index] = temp;
       this.saveData();
       this.render();
     }
