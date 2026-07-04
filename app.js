@@ -701,6 +701,48 @@ class App {
     }
   }
 
+  exportToFile() {
+    const data = { categories: this.categories, routines: this.routines, history: this.history };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `os-routines-backup-${this.getTodayStr()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  triggerFileImport() {
+    document.getElementById('backup-file-input').click();
+  }
+
+  handleFileImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (!data.routines || !data.history) { alert("Format de fichier invalide."); return; }
+        this.categories = data.categories || [...defaultCategories];
+        this.routines   = data.routines.map(r => { delete r.type; delete r.options; return r; });
+        this.history    = data.history;
+        this.saveData();
+        this.closeModal('modal-backup');
+        this.render();
+        alert("Fichier importé avec succès !");
+      } catch (err) {
+        alert("Erreur de lecture. Le fichier n'est pas un JSON valide.");
+      }
+      // Réinitialiser l'input pour permettre de réimporter le même fichier si besoin
+      event.target.value = "";
+    };
+    reader.readAsText(file);
+  }
+
   forceUpdate() {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(regs => {

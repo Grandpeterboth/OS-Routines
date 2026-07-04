@@ -179,10 +179,22 @@
         <textarea id="backup-data" class="form-control" rows="8" placeholder="Collez ici les données à restaurer..."></textarea>
       </div>
       
-      <div class="modal-actions">
+      <div class="modal-actions" style="flex-wrap: wrap;">
         <button class="btn secondary" onclick="app.closeModal('modal-backup')">Fermer</button>
         <button class="btn primary" onclick="app.copyBackup()">Copier</button>
         <button class="btn secondary" style="background:#ef4444;color:white;" onclick="app.restoreBackup()">Restaurer</button>
+      </div>
+
+      <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.5rem;">
+        <input type="file" id="backup-file-input" accept=".json" style="display:none" onchange="app.handleFileImport(event)">
+        <button class="btn primary" onclick="app.exportToFile()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Exporter en fichier (.json)
+        </button>
+        <button class="btn secondary" onclick="app.triggerFileImport()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Importer depuis un fichier
+        </button>
       </div>
 
       <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-color); text-align: center;">
