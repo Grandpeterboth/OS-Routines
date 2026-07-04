@@ -1,0 +1,16 @@
+{
+  "name": "OS Routines",
+  "short_name": "Routines",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#F8FAFC",
+  "theme_color": "#0052FF",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "1024x1024 512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
