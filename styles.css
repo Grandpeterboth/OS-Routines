@@ -451,3 +451,156 @@ main {
   padding: 3rem 1rem;
   color: var(--text-muted);
 }
+
+/* === CLUSTERS EN ATTENTE DE CHOIX === */
+.task-cluster-pending {
+  background: var(--color-boite-light);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  border: 1px dashed var(--color-boite);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  color: var(--color-boite);
+  font-weight: 600;
+  transition: transform 0.2s;
+  margin-bottom: 0.5rem;
+}
+.task-cluster-pending:active { transform: scale(0.99); }
+
+/* === LISTE DES CHECKBOXES DE LIAISON === */
+.cluster-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.cluster-checkbox-row input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+.cluster-checkbox-row label {
+  font-size: 0.875rem;
+  cursor: pointer;
+  margin: 0;
+}
+
+/* === BADGES DE STATISTIQUES === */
+.stat-badge {
+  font-size: 0.7rem;
+  font-weight: 500;
+  background: rgba(0,0,0,0.05);
+  color: var(--text-muted);
+  padding: 0.15rem 0.5rem;
+  border-radius: 99px;
+}
+
+.cluster-choice-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-weight: 600;
+  color: var(--text-main);
+  cursor: pointer;
+}
+.cluster-choice-btn:hover {
+  border-color: var(--color-boite);
+  background: var(--color-boite-light);
+}
+
+.reset-choice-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  padding: 0.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+.reset-choice-btn:hover {
+  background: rgba(0,0,0,0.05);
+  color: var(--text-main);
+}
+
+
+/* === CARTES GROUPE === */
+.task-group-card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--cat-color, var(--border-color));
+  transition: transform 0.2s;
+}
+.task-group-card:active { transform: scale(0.99); }
+
+.task-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.group-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 99px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+}
+
+.task-group-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.option-btn {
+  padding: 0.45rem 0.9rem;
+  border-radius: 99px;
+  border: 1.5px solid var(--border-color);
+  background: var(--bg-color);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.2s;
+}
+.option-btn:hover {
+  border-color: var(--cat-color);
+  color: var(--cat-color);
+}
+.option-btn.selected {
+  background: var(--cat-color);
+  border-color: var(--cat-color);
+  color: white;
+}
+.option-btn.dimmed {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.task-group-card.checked .task-group-header .task-name {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+/* === LIGNE D'ÉDITION D'OPTION === */
+.option-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
