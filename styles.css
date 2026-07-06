@@ -607,35 +607,32 @@ main {
 
 /* === DÉTAILS ROUTINES === */
 .task-detail-indicator {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  position: relative;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+.task-detail-indicator:hover {
+  background-color: rgba(0,0,0,0.05);
+}
+.task-detail-indicator::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
   width: 6px;
   height: 6px;
+  background-color: var(--cat-color);
   border-radius: 50%;
-  background: var(--cat-color, var(--color-primary));
-  opacity: 0.5;
-  flex-shrink: 0;
-  margin-left: 2px;
+  opacity: 0.8;
+  transition: transform 0.2s, opacity 0.2s;
 }
-
-.task-detail-toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  cursor: pointer;
-  margin-top: 0.25rem;
-  border: none;
-  background: none;
-  padding: 0;
-  font-family: inherit;
-}
-.task-detail-toggle svg {
-  width: 12px;
-  height: 12px;
-  transition: transform 0.2s;
-}
-.task-detail-toggle.open svg {
-  transform: rotate(180deg);
+.task-detail-indicator.open::after {
+  transform: translate(-50%, -50%) scale(1.5);
+  opacity: 1;
 }
 
 .task-detail-content {
@@ -669,28 +666,6 @@ main {
 }
 .task-card-wrapper[draggable="true"]:active {
   cursor: grabbing;
-}
-
-.edit-today-btn {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  opacity: 0.6;
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition: opacity 0.2s, background 0.2s;
-}
-.edit-today-btn svg {
-  width: 16px;
-  height: 16px;
-}
-.edit-today-btn:hover, .task-card:hover .edit-today-btn {
-  opacity: 1;
-  background: rgba(0,0,0,0.05);
 }
 
 /* === TOASTS / PALIERS === */

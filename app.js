@@ -429,10 +429,8 @@ class App {
     }
 
     const hasDetail = task.detail && task.detail.trim().length > 0;
-    const detailIndicator = hasDetail ? '<span class="task-detail-indicator"></span>' : '';
-    const chevronSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`;
+    const detailIndicator = hasDetail ? `<span class="task-detail-indicator" onclick="event.stopPropagation(); app.toggleDetail('${task.id}')" title="Voir les détails" id="detail-toggle-${task.id}"></span>` : '';
     const detailSection = hasDetail ? `
-      <button class="task-detail-toggle" onclick="event.stopPropagation(); app.toggleDetail('${task.id}')" id="detail-toggle-${task.id}">Détails ${chevronSvg}</button>
       <div class="task-detail-content" id="detail-content-${task.id}">${task.detail.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
     ` : '';
 
@@ -450,12 +448,7 @@ class App {
             </div>
             <span class="task-days">${daysText}</span>
           </div>
-          <div style="display:flex; align-items:center; gap:0.75rem;">
-            <button class="edit-today-btn" onclick="event.stopPropagation(); app.editRoutine('${task.id}')" title="Modifier la tâche">
-              ${editIcon}
-            </button>
-            <div class="task-checkbox">${checked ? checkIcon : ''}</div>
-          </div>
+          <div class="task-checkbox">${checked ? checkIcon : ''}</div>
         </div>
         ${detailSection}
       </div>`;
