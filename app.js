@@ -342,27 +342,44 @@ class App {
       return;
     }
 
+    // Normaliser displayCat et displayOrder pour toutes les tâches
+    tasks.forEach((t, i) => {
+      if (!t.displayCat) t.displayCat = t.cat;
+      if (typeof t.displayOrder !== 'number') t.displayOrder = i;
+    });
+
     const byCategory = {};
     this.categories.forEach(c => byCategory[c.id] = []);
-    tasks.forEach(t => { if (byCategory[t.cat]) byCategory[t.cat].push(t); });
+    tasks.forEach(t => { 
+      const catId = byCategory[t.displayCat] ? t.displayCat : (byCategory[t.cat] ? t.cat : null);
+      if (catId) byCategory[catId].push(t); 
+    });
 
     this.categories.forEach(cat => {
       const catTasks = byCategory[cat.id];
       if (!catTasks || catTasks.length === 0) return;
 
+      // Trier par displayOrder
+      catTasks.sort((a, b) => a.displayOrder - b.displayOrder);
+
       const section  = document.createElement('div');
       section.className = 'category-section';
       const iconHtml = this.renderIcon(cat);
 
-      let html = `<div class="category-title" style="--cat-color: ${cat.color}"><div class="cat-icon-display">${iconHtml}</div> ${cat.name}</div><div class="task-list">`;
+      let html = `<div class="category-title" style="--cat-color: ${cat.color}" ondragover="app.handleDragOverCat(event)" ondrop="app.handleDropOnCat(event, '${cat.id}')">
+        <div class="cat-icon-display">${iconHtml}</div> ${cat.name}
+      </div>
+      <div class="task-list" ondragover="app.handleDragOverCat(event)" ondrop="app.handleDropOnCat(event, '${cat.id}')">`;
 
       const processedClusters = [];
       const selections = this.getSelectionsForToday();
 
       catTasks.forEach(task => {
+        const originalCat = this.getCategoryInfo(task.cat);
+        
         if (!task.clusterId) {
           // Tâche normale
-          html += this.buildSingleCardHtml(task, cat);
+          html += this.buildSingleCardHtml(task, originalCat);
         } else {
           // Tâche avec Cluster
           if (processedClusters.includes(task.clusterId)) return; 
@@ -372,14 +389,15 @@ class App {
           
           if (siblings.length === 1 || !isTodayView) {
             // Si c'est la seule tâche de ce cluster ce jour, ou vue globale -> normale
-            html += this.buildSingleCardHtml(task, cat);
+            html += this.buildSingleCardHtml(task, originalCat);
           } else {
             // Plusieurs tâches -> Gestion du choix
             const chosenId = selections[task.clusterId];
             if (chosenId) {
               const chosenTask = siblings.find(s => s.id === chosenId);
               if (chosenTask) {
-                html += this.buildSingleCardHtml(chosenTask, cat, task.clusterId);
+                const chosenCat = this.getCategoryInfo(chosenTask.cat);
+                html += this.buildSingleCardHtml(chosenTask, chosenCat, task.clusterId);
               }
             } else {
               // Aucun choix fait, afficher le bouton d'attente
@@ -410,17 +428,114 @@ class App {
       resetBtn = `<button class="reset-choice-btn" onclick="event.stopPropagation(); app.resetClusterChoice('${clusterId}', '${task.id}')" title="Changer le choix">${resetIcon}</button>`;
     }
 
+    const hasDetail = task.detail && task.detail.trim().length > 0;
+    const detailIndicator = hasDetail ? '<span class="task-detail-indicator"></span>' : '';
+    const chevronSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`;
+    const detailSection = hasDetail ? `
+      <button class="task-detail-toggle" onclick="event.stopPropagation(); app.toggleDetail('${task.id}')" id="detail-toggle-${task.id}">Détails ${chevronSvg}</button>
+      <div class="task-detail-content" id="detail-content-${task.id}">${task.detail.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+    ` : '';
+
     return `
-      <div class="task-card ${checked ? 'checked' : ''}" style="--cat-color: ${cat.color}" onclick="app.toggleTask('${task.id}')">
-        <div class="task-info">
-          <div style="display:flex; align-items:center; gap:0.5rem;">
-            <span class="task-name">${task.name}</span>
-            ${resetBtn}
+      <div class="task-card-wrapper" draggable="true" 
+           ondragstart="app.handleDragStart(event, '${task.id}')" 
+           ondragover="app.handleDragOverTask(event, '${task.id}')" 
+           ondrop="app.handleDropOnTask(event, '${task.id}')">
+        <div class="task-card ${checked ? 'checked' : ''}" style="--cat-color: ${cat.color}" onclick="app.toggleTask('${task.id}')">
+          <div class="task-info">
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+              <span class="task-name">${task.name}</span>
+              ${detailIndicator}
+              ${resetBtn}
+            </div>
+            <span class="task-days">${daysText}</span>
           </div>
-          <span class="task-days">${daysText}</span>
+          <div class="task-checkbox">${checked ? checkIcon : ''}</div>
         </div>
-        <div class="task-checkbox">${checked ? checkIcon : ''}</div>
+        ${detailSection}
       </div>`;
+  }
+
+  toggleDetail(taskId) {
+    const toggle = document.getElementById(`detail-toggle-${taskId}`);
+    const content = document.getElementById(`detail-content-${taskId}`);
+    if (toggle && content) {
+      toggle.classList.toggle('open');
+      content.classList.toggle('open');
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // DRAG AND DROP
+  // ─────────────────────────────────────────────────────────────
+  handleDragStart(e, taskId) {
+    e.dataTransfer.setData('text/plain', taskId);
+    e.currentTarget.style.opacity = '0.5';
+    // Small timeout to not mess with the visual drag element
+    setTimeout(() => {
+      document.querySelectorAll('.task-card-wrapper').forEach(el => el.classList.add('dragging-active'));
+    }, 10);
+  }
+
+  handleDragOverTask(e, targetId) {
+    e.preventDefault();
+  }
+
+  handleDragOverCat(e) {
+    e.preventDefault();
+  }
+
+  handleDropOnTask(e, targetId) {
+    e.preventDefault();
+    e.stopPropagation();
+    document.querySelectorAll('.task-card-wrapper').forEach(el => el.classList.remove('dragging-active'));
+    
+    const draggedId = e.dataTransfer.getData('text/plain');
+    if (draggedId === targetId) return;
+    
+    const draggedTask = this.routines.find(r => r.id === draggedId);
+    const targetTask = this.routines.find(r => r.id === targetId);
+    if (!draggedTask || !targetTask) return;
+    
+    draggedTask.displayCat = targetTask.displayCat || targetTask.cat;
+    // Insert BEFORE the target task
+    draggedTask.displayOrder = (targetTask.displayOrder || 0) - 0.5;
+    
+    this.normalizeDisplayOrders();
+    this.saveData();
+    this.render();
+  }
+
+  handleDropOnCat(e, catId) {
+    e.preventDefault();
+    document.querySelectorAll('.task-card-wrapper').forEach(el => el.classList.remove('dragging-active'));
+    
+    const draggedId = e.dataTransfer.getData('text/plain');
+    const draggedTask = this.routines.find(r => r.id === draggedId);
+    if (!draggedTask) return;
+    
+    draggedTask.displayCat = catId;
+    
+    const catTasks = this.routines.filter(r => (r.displayCat || r.cat) === catId);
+    let maxOrder = 0;
+    if (catTasks.length > 0) {
+      maxOrder = Math.max(...catTasks.map(t => t.displayOrder || 0));
+    }
+    draggedTask.displayOrder = maxOrder + 1;
+    
+    this.normalizeDisplayOrders();
+    this.saveData();
+    this.render();
+  }
+  
+  normalizeDisplayOrders() {
+    this.categories.forEach(cat => {
+      let catTasks = this.routines.filter(r => (r.displayCat || r.cat) === cat.id);
+      catTasks.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+      catTasks.forEach((t, index) => {
+        t.displayOrder = index;
+      });
+    });
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -428,9 +543,15 @@ class App {
   // ─────────────────────────────────────────────────────────────
   renderManageRoutines() {
     const container = document.getElementById('manage-routines-container');
+    const sortSelect = document.getElementById('manage-sort-select');
     container.innerHTML = '';
+    
+    let sortedRoutines = [...this.routines];
+    if (sortSelect && sortSelect.value === 'alpha') {
+      sortedRoutines.sort((a, b) => a.name.localeCompare(b.name, 'fr', {sensitivity: 'base'}));
+    }
 
-    this.routines.forEach(task => {
+    sortedRoutines.forEach(task => {
       const cat      = this.getCategoryInfo(task.cat);
       const daysText = task.days.length === 7 ? 'Tous les jours' : task.days.map(d => dayNames[d]).join(', ');
       const div      = document.createElement('div');
@@ -466,6 +587,7 @@ class App {
       titleEl.textContent = "Modifier la routine";
       document.getElementById('form-routine-id').value   = routine.id;
       document.getElementById('form-routine-name').value = routine.name;
+      document.getElementById('form-routine-detail').value = routine.detail || '';
       selectCat.value = routine.cat;
       routine.days.forEach(d => document.querySelector(`.day-btn[data-day="${d}"]`).classList.add('selected'));
       currentClusterId = routine.clusterId;
@@ -473,31 +595,73 @@ class App {
       titleEl.textContent = "Nouvelle Routine";
       document.getElementById('form-routine-id').value   = '';
       document.getElementById('form-routine-name').value = '';
+      document.getElementById('form-routine-detail').value = '';
       if (this.categories.length > 0) selectCat.value = this.categories[0].id;
     }
 
     // Peupler les cases à cocher de cluster
     const clusterList = document.getElementById('form-routine-cluster-list');
+    const catSelect = document.getElementById('form-routine-cluster-cat-select');
+    
+    // Peupler le menu déroulant des rubriques (sans iconHtml pour éviter les tags/undefined)
+    catSelect.innerHTML = '<option value="">Sélectionnez une rubrique pour voir ses routines...</option>' + 
+                          this.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                          
+    // Peupler toutes les checkboxes, masquées par défaut
     clusterList.innerHTML = this.routines
       .filter(r => r.id !== id)
       .map(r => {
-        // Est cochée si l'autre routine a le même clusterId que la routine actuelle
         const isChecked = (currentClusterId && r.clusterId === currentClusterId) ? 'checked' : '';
         return `
-          <div class="cluster-checkbox-row">
-            <input type="checkbox" id="cluster_check_${r.id}" value="${r.id}" ${isChecked}>
+          <div class="cluster-checkbox-row" data-cat="${r.cat}" style="display:none; align-items:center; gap:0.5rem;">
+            <input type="checkbox" id="cluster_check_${r.id}" value="${r.id}" ${isChecked} onchange="app.updateClusterSelectedText()">
             <label for="cluster_check_${r.id}">${r.name}</label>
           </div>
         `;
       }).join('');
 
+    this.updateClusterSelectedText();
     modal.classList.add('active');
+  }
+
+  updateClusterListDisplay() {
+    const selectedCat = document.getElementById('form-routine-cluster-cat-select').value;
+    const rows = document.querySelectorAll('.cluster-checkbox-row');
+    let hasVisible = false;
+    
+    rows.forEach(row => {
+      if (selectedCat && row.getAttribute('data-cat') === selectedCat) {
+        row.style.display = 'flex';
+        hasVisible = true;
+      } else {
+        row.style.display = 'none';
+      }
+    });
+    
+    if (!hasVisible && selectedCat) {
+      document.getElementById('form-routine-cluster-list').innerHTML += `<div class="temp-no-routines" style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:1rem 0;">Aucune autre routine dans cette rubrique.</div>`;
+    } else {
+      const msg = document.querySelector('.temp-no-routines');
+      if(msg) msg.remove();
+    }
+  }
+
+  updateClusterSelectedText() {
+    const checked = Array.from(document.querySelectorAll('#form-routine-cluster-list input:checked'));
+    const container = document.getElementById('form-routine-cluster-selected');
+    if (checked.length === 0) {
+      container.textContent = "Aucune routine liée actuellement.";
+    } else {
+      const names = checked.map(cb => cb.nextElementSibling.textContent);
+      container.textContent = "Lié à : " + names.join(', ');
+    }
   }
 
   saveRoutine() {
     const id   = document.getElementById('form-routine-id').value || Date.now().toString();
-    const name = document.getElementById('form-routine-name').value.trim();
-    const cat  = document.getElementById('form-routine-cat').value;
+    const name   = document.getElementById('form-routine-name').value.trim();
+    const detail = document.getElementById('form-routine-detail').value.trim();
+    const cat    = document.getElementById('form-routine-cat').value;
 
     const days = [];
     document.querySelectorAll('.day-btn.selected').forEach(b => days.push(parseInt(b.getAttribute('data-day'))));
@@ -506,6 +670,7 @@ class App {
     if (days.length === 0) { alert("Sélectionnez au moins un jour."); return; }
 
     const routine = { id, name, cat, days };
+    if (detail) routine.detail = detail;
 
     // Gestion du ClusterId
     const checkedCheckboxes = Array.from(document.querySelectorAll('#form-routine-cluster-list input:checked'));
@@ -820,7 +985,7 @@ class App {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // CÉLÉBRATIONS ET DÉFILÉ
+  // CÉLÉBRATIONS ET DÉFILÉ (100% auto-contenu, zéro dépendance)
   // ─────────────────────────────────────────────────────────────
   showMilestoneToast(msg) {
     const container = document.getElementById('toast-container');
@@ -828,126 +993,220 @@ class App {
     toast.className = 'milestone-toast';
     toast.innerHTML = msg;
     container.appendChild(toast);
-    setTimeout(() => {
-      if (toast.parentNode) toast.parentNode.removeChild(toast);
-    }, 3500);
+    setTimeout(() => { if (toast.parentNode) toast.remove(); }, 3500);
   }
 
   triggerMilestoneAnim(threshold) {
     const container = document.getElementById('milestone-anim-container');
-    container.innerHTML = ''; // Nettoyer les anciennes anims
-    const el = document.createElement('div');
-    el.className = 'anim-emoji';
-    
-    if (threshold === 1) {
-      el.textContent = '🚀';
-      el.classList.add('anim-rocket');
-    } else if (threshold === 30) {
-      el.textContent = '🔥';
-      el.classList.add('anim-fire');
-    } else if (threshold === 50) {
-      el.textContent = '✨';
-      el.classList.add('anim-magic');
-    } else if (threshold === 70) {
-      el.textContent = '🏃‍♂️';
-      el.classList.add('anim-runner');
-    } else if (threshold === 80) {
-      el.textContent = '🏎️';
-      el.classList.add('anim-car');
-    } else if (threshold === 90) {
-      el.textContent = '🎯';
-      el.classList.add('anim-target');
+    container.innerHTML = '';
+
+    const configs = {
+      1:  { emojis: ['🚀','💫','⭐','✨','🌟','💥'], color: '#3b82f6', label: 'GO !' },
+      30: { emojis: ['🔥','💪','⚡','💥','🌶️','🔥'], color: '#f97316', label: '30%' },
+      50: { emojis: ['✨','🌟','💎','⭐','🔮','✨'], color: '#a855f7', label: 'MI-CHEMIN' },
+      70: { emojis: ['🏃','💨','⚡','🔥','🏃‍♂️','💥'], color: '#ef4444', label: '70%' },
+      80: { emojis: ['🏎️','💨','🏁','⚡','🔥','🏎️'], color: '#eab308', label: '80%' },
+      90: { emojis: ['🎯','🏹','💥','⭐','🎯','🔥'], color: '#22c55e', label: 'PRESQUE !' },
+    };
+    const cfg = configs[threshold];
+    if (!cfg) return;
+
+    // Flash de couleur
+    const flash = document.createElement('div');
+    flash.className = 'milestone-flash';
+    flash.style.background = `radial-gradient(circle, ${cfg.color}66, transparent 70%)`;
+    container.appendChild(flash);
+
+    // Explosion de particules
+    for (let i = 0; i < 14; i++) {
+      const p = document.createElement('div');
+      p.className = 'milestone-particle';
+      p.textContent = cfg.emojis[i % cfg.emojis.length];
+      const angle = (i / 14) * 2 * Math.PI + (Math.random() - 0.5) * 0.4;
+      const dist = 120 + Math.random() * 180;
+      p.style.setProperty('--tx', `${Math.cos(angle) * dist}px`);
+      p.style.setProperty('--ty', `${Math.sin(angle) * dist}px`);
+      p.style.animationDelay = `${Math.random() * 0.15}s`;
+      container.appendChild(p);
     }
-    
-    container.appendChild(el);
-    setTimeout(() => {
-      if (el.parentNode) el.parentNode.removeChild(el);
-    }, 3000);
+
+    // Texte central lumineux
+    const text = document.createElement('div');
+    text.className = 'milestone-center-text';
+    text.style.setProperty('--ms-color', cfg.color);
+    text.textContent = cfg.label;
+    container.appendChild(text);
+
+    // Pulse sur la barre de progression
+    const bar = document.getElementById('progress-bar');
+    bar.classList.add('milestone-glow');
+    setTimeout(() => bar.classList.remove('milestone-glow'), 1500);
+
+    // Nettoyage
+    setTimeout(() => { container.innerHTML = ''; }, 3000);
   }
 
   triggerCelebration(todayTasks) {
-    // Débloquer l'audio immédiatement (interaction utilisateur synchrone)
-    const audio = document.getElementById('parade-audio');
-    if (audio) {
-      audio.volume = 0;
-      audio.play().then(() => {
-        audio.pause();
-        audio.currentTime = 0;
-        audio.volume = 1;
-      }).catch(e => console.log("Audio unlock failed:", e));
-    }
-
-    const gifs = [
-      "https://media.giphy.com/media/3o7TKWe6bAEVqgMvO8/giphy.gif", // Basket
-      "https://media.giphy.com/media/qDPg6HNz2NfAk/giphy.gif", // Foot
-      "https://media.giphy.com/media/26u4cqiYI30juCOGY/giphy.gif", // Coupe
-      "https://media.giphy.com/media/3o7qDEq2bMbcbPRQ2c/giphy.gif", // KO MMA
-      "https://media.giphy.com/media/xUPGcxpCV81ebKh7Vu/giphy.gif", // Danse
-      "https://media.giphy.com/media/13CoXDiaCcCoyk/giphy.gif", // Minions
-      "https://media.giphy.com/media/l41YkxvU8c7J7Bba0/giphy.gif", // Winner
-      "https://media.giphy.com/media/3o6fJ1BM7R2EBRDnxK/giphy.gif", // Artifice
-      "https://media.giphy.com/media/5mYkpeGz8k7aMhxQZ7/giphy.gif"  // Trophy
+    // 10 célébrations thématiques sportives : zéro dépendance externe
+    const scenes = [
+      { icon: '🏀', text: 'SLAM DUNK !', sub: 'Les Knicks marquent le panier !', color: '#F58426', colors: ['#006BB6', '#F58426', '#FFFFFF'] },
+      { icon: '⚽', text: 'BUUUUT !', sub: 'Le PSG marque !', color: '#DA291C', colors: ['#004170', '#DA291C', '#FFFFFF'] },
+      { icon: '🏆', text: 'CHAMPION !', sub: 'Les Knicks soulèvent le trophée !', color: '#FFD700', colors: ['#006BB6', '#F58426', '#FFD700'] },
+      { icon: '🏆', text: 'LA COUPE !', sub: 'Le PSG soulève le trophée !', color: '#FFD700', colors: ['#004170', '#DA291C', '#FFD700'] },
+      { icon: '🥊', text: 'K.O. !', sub: 'Victoire par knockout !', color: '#FF4500', colors: ['#FF0000', '#FF4500', '#FFD700'] },
+      { icon: '🥇', text: 'MÉDAILLE D\'OR !', sub: 'Sur le podium olympique !', color: '#FFD700', colors: ['#FFD700', '#C0C0C0', '#CD7F32'] },
+      { icon: '🎆', text: 'FEU D\'ARTIFICE !', sub: 'Le stade s\'illumine !', color: '#FF1493', colors: ['#FF1493', '#00BFFF', '#FFD700'] },
+      { icon: '🏈', text: 'TOUCHDOWN !', sub: 'Dans la zone d\'en-but !', color: '#D50A0A', colors: ['#013369', '#D50A0A', '#FFFFFF'] },
+      { icon: '🏎️', text: 'POLE POSITION !', sub: 'Victoire en Formule 1 !', color: '#FF0000', colors: ['#FF0000', '#FFFFFF', '#FFD700'] },
+      { icon: '🎯', text: '100% PARFAIT !', sub: 'Confettis purs, tu as tout donné !', color: '#22c55e', colors: ['#FFD700', '#FF69B4', '#00CED1'] },
     ];
-    
-    // 10 options : 1 fois confettis purs, 9 fois des GIFs
-    const rand = Math.floor(Math.random() * 10);
-    
-    if (rand === 0) {
-      // Confettis seuls
-      this.fireConfetti();
-      setTimeout(() => this.startParade(todayTasks), 3000);
-    } else {
-      // GIF + légers confettis
-      this.fireConfetti();
-      const gifUrl = gifs[rand - 1];
-      const overlay = document.getElementById('celebration-overlay');
-      const img = document.getElementById('celebration-gif');
-      img.src = gifUrl;
-      img.style.display = 'block';
-      overlay.classList.add('active');
-      
-      setTimeout(() => {
-        overlay.classList.remove('active');
-        setTimeout(() => this.startParade(todayTasks), 400);
-      }, 4000);
+
+    const scene = scenes[Math.floor(Math.random() * scenes.length)];
+
+    // Construire la scène dans l'overlay
+    const overlay = document.getElementById('celebration-overlay');
+    const content = document.getElementById('celebration-content');
+    content.innerHTML = `
+      <div class="celeb-glow" style="background: ${scene.color}"></div>
+      <div class="celeb-icon">${scene.icon}</div>
+      <div class="celeb-text" style="--celeb-color: ${scene.color}">${scene.text}</div>
+      <div class="celeb-subtitle">${scene.sub}</div>
+    `;
+    overlay.classList.add('active');
+
+    // Confettis aux couleurs du thème
+    this.fireThemedConfetti(scene.colors);
+
+    // Fanfare via Web Audio API
+    this.playFanfare();
+
+    // Fermer après 4.5s, puis lancer le défilé
+    setTimeout(() => {
+      overlay.classList.remove('active');
+      setTimeout(() => this.startParade(todayTasks), 600);
+    }, 4500);
+  }
+
+  fireThemedConfetti(colors) {
+    if (typeof confetti === 'undefined') return;
+    const duration = 3500;
+    const end = Date.now() + duration;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 80, zIndex: 10001 };
+
+    const interval = setInterval(() => {
+      const timeLeft = end - Date.now();
+      if (timeLeft <= 0) return clearInterval(interval);
+      const count = 40 * (timeLeft / duration);
+      confetti(Object.assign({}, defaults, {
+        particleCount: count,
+        colors: colors,
+        origin: { x: Math.random(), y: Math.random() * 0.4 }
+      }));
+    }, 200);
+  }
+
+  playFanfare() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const now = ctx.currentTime;
+
+      const playNote = (freq, start, dur, type = 'triangle', vol = 0.12) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        g.gain.setValueAtTime(0, now + start);
+        g.gain.linearRampToValueAtTime(vol, now + start + 0.04);
+        g.gain.setValueAtTime(vol, now + start + dur * 0.7);
+        g.gain.exponentialRampToValueAtTime(0.001, now + start + dur);
+        osc.connect(g);
+        g.connect(ctx.destination);
+        osc.start(now + start);
+        osc.stop(now + start + dur + 0.05);
+      };
+
+      // Fanfare de stade : ta-ta-ta-TAAAA !
+      playNote(523.25, 0, 0.18);       // C5
+      playNote(523.25, 0.22, 0.18);    // C5
+      playNote(523.25, 0.44, 0.18);    // C5
+      playNote(698.46, 0.66, 0.55);    // F5
+
+      // 2ème phrase : ta-ta-ta-TAAAA (plus haut)
+      playNote(587.33, 1.4, 0.18);     // D5
+      playNote(587.33, 1.62, 0.18);    // D5
+      playNote(587.33, 1.84, 0.18);    // D5
+      playNote(783.99, 2.06, 0.55);    // G5
+
+      // Accord final triomphal
+      playNote(523.25, 2.8, 1.2, 'triangle', 0.08); // C5
+      playNote(659.25, 2.8, 1.2, 'triangle', 0.08); // E5
+      playNote(783.99, 2.8, 1.2, 'triangle', 0.08); // G5
+      playNote(1046.50, 2.8, 1.2, 'sine', 0.06);    // C6
+
+      this._fanfareCtx = ctx;
+    } catch(e) {
+      console.log('Web Audio API error:', e);
     }
   }
 
-  fireConfetti() {
-    if (typeof confetti !== 'undefined') {
-      var duration = 3 * 1000;
-      var animationEnd = Date.now() + duration;
-      var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 10000 };
+  playParadeMusic() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      this._paradeCtx = ctx;
+      const now = ctx.currentTime;
 
-      var interval = setInterval(function() {
-        var timeLeft = animationEnd - Date.now();
-        if (timeLeft <= 0) { return clearInterval(interval); }
-        var particleCount = 50 * (timeLeft / duration);
-        confetti(Object.assign({}, defaults, { particleCount, origin: { x: Math.random(), y: Math.random() - 0.2 } }));
-      }, 250);
+      const playChord = (freqs, start, dur) => {
+        freqs.forEach(freq => {
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          g.gain.setValueAtTime(0, now + start);
+          g.gain.linearRampToValueAtTime(0.06, now + start + 0.15);
+          g.gain.setValueAtTime(0.06, now + start + dur - 0.3);
+          g.gain.linearRampToValueAtTime(0, now + start + dur);
+          osc.connect(g);
+          g.connect(ctx.destination);
+          osc.start(now + start);
+          osc.stop(now + start + dur + 0.1);
+        });
+      };
+
+      // Progression majestueuse I-IV-V-I en boucle (80 secondes)
+      const beat = 2.5;
+      for (let r = 0; r < 8; r++) {
+        const o = r * beat * 4;
+        playChord([261.63, 329.63, 392.00], o, beat);               // C
+        playChord([349.23, 440.00, 523.25], o + beat, beat);         // F
+        playChord([392.00, 493.88, 587.33], o + beat * 2, beat);     // G
+        playChord([523.25, 659.25, 783.99], o + beat * 3, beat);     // C (octave)
+      }
+    } catch(e) {
+      console.log('Web Audio API error:', e);
     }
   }
 
   startParade(todayTasks) {
     const overlay = document.getElementById('parade-overlay');
     const track = document.getElementById('parade-track');
-    
-    // Récupérer uniquement les tâches complétées aujourd'hui
+
+    // Récupérer les tâches complétées (y compris clusters)
     const completedTasks = todayTasks.filter(t => this.isCompleted(t.id));
-    
+
     track.innerHTML = '';
-    
+
     completedTasks.forEach(task => {
       const cat = this.getCategoryInfo(task.cat);
       const iconHtml = this.renderIcon(cat);
       const card = document.createElement('div');
       card.className = 'parade-card';
-      card.style.borderLeft = `4px solid ${cat.color}`;
+      card.style.setProperty('--pc-color', cat.color);
       card.innerHTML = `
         <div class="cat-icon" style="color: ${cat.color}">${iconHtml}</div>
         <div class="parade-card-info">
           <div class="parade-card-title">${task.name}</div>
           <div class="parade-card-cat" style="color: ${cat.color}">${cat.name}</div>
+          <div class="parade-card-check">✓ Accompli</div>
         </div>
       `;
       track.appendChild(card);
@@ -955,51 +1214,41 @@ class App {
 
     overlay.classList.add('active');
     track.classList.remove('paused');
-    
-    // Lancer la musique du défilé
-    const audio = document.getElementById('parade-audio');
-    if (audio) {
-      audio.currentTime = 0;
-      audio.play().catch(e => console.log("Audio play prevented by browser:", e));
-    }
-    
-    // Calcul de la durée d'animation selon le nombre de tâches (ex: 3s par tâche)
-    const duration = Math.max(10, completedTasks.length * 3);
-    track.style.animation = `none`; // reset
-    void track.offsetWidth; // trigger reflow
+
+    // Musique de défilé via Web Audio API
+    this.playParadeMusic();
+
+    // Animation
+    const duration = Math.max(12, completedTasks.length * 3.5);
+    track.style.animation = 'none';
+    void track.offsetWidth;
     track.style.animation = `paradeScroll ${duration}s linear forwards`;
-    
-    // Fermeture auto à la fin de l'animation
-    this.paradeTimeout = setTimeout(() => {
-      this.closeParade();
-    }, duration * 1000 + 2000);
+
+    // Fermeture auto
+    this.paradeTimeout = setTimeout(() => this.closeParade(), duration * 1000 + 2000);
   }
 
   toggleParadePause() {
     const track = document.getElementById('parade-track');
     const btn = document.getElementById('parade-pause-btn');
-    const audio = document.getElementById('parade-audio');
-    
+
     if (track.classList.contains('paused')) {
       track.classList.remove('paused');
-      btn.textContent = 'Pause';
-      if (audio) audio.play();
+      btn.textContent = '⏸ Pause';
+      if (this._paradeCtx && this._paradeCtx.state === 'suspended') this._paradeCtx.resume();
     } else {
       track.classList.add('paused');
-      btn.textContent = 'Reprendre';
-      if (audio) audio.pause();
+      btn.textContent = '▶ Reprendre';
+      if (this._paradeCtx && this._paradeCtx.state === 'running') this._paradeCtx.suspend();
     }
   }
 
   closeParade() {
-    const overlay = document.getElementById('parade-overlay');
-    overlay.classList.remove('active');
+    document.getElementById('parade-overlay').classList.remove('active');
     if (this.paradeTimeout) clearTimeout(this.paradeTimeout);
-    
-    const audio = document.getElementById('parade-audio');
-    if (audio) {
-      audio.pause();
-      audio.currentTime = 0;
+    if (this._paradeCtx) {
+      this._paradeCtx.close().catch(() => {});
+      this._paradeCtx = null;
     }
   }
 }

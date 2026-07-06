@@ -43,10 +43,17 @@
 
       <!-- Manage Routines -->
       <div id="manage-routines-section">
-        <button class="btn primary" onclick="app.showRoutineModal()" style="margin-bottom: 1.5rem;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Nouvelle Routine
-        </button>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+          <button class="btn primary" onclick="app.showRoutineModal()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nouvelle Routine
+          </button>
+          
+          <select id="manage-sort-select" class="form-control" style="max-width: 200px; padding: 0.3rem 0.5rem; font-size: 0.85rem;" onchange="app.renderManageRoutines()">
+            <option value="creation">Ordre de création (défaut)</option>
+            <option value="alpha">Alphabétique (A-Z)</option>
+          </select>
+        </div>
         <div id="manage-routines-container"></div>
       </div>
 
@@ -84,6 +91,11 @@
         <label for="form-routine-name">Nom de la tâche</label>
         <input type="text" id="form-routine-name" class="form-control" placeholder="Ex: Faire la vaisselle">
       </div>
+
+      <div class="form-group">
+        <label for="form-routine-detail">Détails (optionnel)</label>
+        <textarea id="form-routine-detail" class="form-control" rows="3" placeholder="Ex: Utiliser le produit bio, ne pas oublier les casseroles..."></textarea>
+      </div>
       
       <div class="form-group">
         <label for="form-routine-cat">Rubrique</label>
@@ -97,8 +109,16 @@
         <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.5rem; line-height:1.2;">
           Cochez les routines avec lesquelles celle-ci formera un "choix tournant" (1 seule à faire le jour J).
         </div>
+        
+        <select id="form-routine-cluster-cat-select" class="form-control" style="margin-bottom:0.5rem;" onchange="app.updateClusterListDisplay()">
+           <option value="">Sélectionnez une rubrique pour voir ses routines...</option>
+           <!-- Peuplé dynamiquement -->
+        </select>
+        
+        <div id="form-routine-cluster-selected" style="margin-bottom:0.5rem; font-size:0.8rem; color:var(--color-primary); min-height:1.2rem;"></div>
+        
         <div id="form-routine-cluster-list" style="max-height:150px; overflow-y:auto; border:1px solid var(--border-color); border-radius:6px; padding:0.5rem; display:flex; flex-direction:column; gap:0.5rem;">
-          <!-- Checkboxes dynamiques -->
+          <div style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:1rem 0;">Choisissez une rubrique ci-dessus</div>
         </div>
       </div>
 
@@ -225,36 +245,29 @@
   <!-- Toast Container pour les paliers -->
   <div id="toast-container"></div>
 
-  <!-- Overlay Célébration (GIF) -->
+  <!-- Overlay Célébration (construit dynamiquement par JS) -->
   <div class="celebration-overlay" id="celebration-overlay">
-    <div class="celebration-content" id="celebration-content">
-      <img id="celebration-gif" src="" alt="Célébration" style="display:none;">
-    </div>
+    <div class="celebration-content" id="celebration-content"></div>
   </div>
 
   <!-- Overlay Défilé -->
   <div class="parade-overlay" id="parade-overlay">
     <div class="parade-header">
-      <h2>Hommage aux accomplissements</h2>
+      <h2>★ Hommage aux Accomplissements ★</h2>
       <div class="parade-controls">
         <button id="parade-pause-btn" class="btn secondary" onclick="app.toggleParadePause()">
-          Pause
+          ⏸ Pause
         </button>
-        <button class="btn secondary" onclick="app.closeParade()">Fermer</button>
+        <button class="btn secondary" onclick="app.closeParade()">✕ Fermer</button>
       </div>
     </div>
     <div class="parade-container">
-      <div class="parade-track" id="parade-track">
-        <!-- Tâches injectées dynamiquement -->
-      </div>
+      <div class="parade-track" id="parade-track"></div>
     </div>
   </div>
 
   <!-- Conteneur d'animations créatives (Paliers) -->
   <div id="milestone-anim-container"></div>
-
-  <!-- Audio pour le défilé (MP3 public domain) -->
-  <audio id="parade-audio" src="https://freepd.com/music/Super%20Hero.mp3" preload="auto" loop></audio>
 
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script src="app.js"></script>
