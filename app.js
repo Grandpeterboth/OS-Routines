@@ -68,6 +68,7 @@ class App {
   // INITIALISATION
   // ─────────────────────────────────────────────────────────────
   init() {
+    this.highestPercentSeen = -1;
     this.loadData();
     this.setupListeners();
     this.render();
@@ -282,6 +283,41 @@ class App {
     const percent = Math.round((completedPoints / uniquePoints.length) * 100);
     document.getElementById('progress-bar').style.width = `${percent}%`;
     document.getElementById('progress-text').textContent = `${percent}% complété (${completedPoints}/${uniquePoints.length})`;
+
+    if (this.highestPercentSeen === -1) {
+      this.highestPercentSeen = percent;
+    } else if (percent > this.highestPercentSeen) {
+      // Messages aléatoires pour les paliers
+      const msg1 = ["C'est parti ! Bon courage ! 🚀", "Le premier pas est fait ! 👏", "Décollage réussi ! 🌟"];
+      const msg30 = ["Bon début ! 💪", "Sur la bonne voie ! 🛤️", "Pas mal du tout ! 👍"];
+      const msg50 = ["Moitié du chemin fait ! ✨", "Le point de non-retour ! ⚖️", "Encore un effort ! 🌗"];
+      const msg70 = ["Plus que quelques efforts ! 🔥", "On ne lâche rien ! 🏃‍♂️", "La fin approche ! ⏳"];
+      const msg80 = ["Dernière ligne droite ! 🏁", "Accélération finale ! 🏎️", "On y est presque ! 💨"];
+      const msg90 = ["Presque au but ! 🎯", "Encore un tout petit effort ! 🤏", "Dans le mille ! 🏹"];
+
+      const getRandomMsg = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+      const milestones = [
+        { th: 1, msg: getRandomMsg(msg1), val: completedPoints === 1 },
+        { th: 30, msg: getRandomMsg(msg30), val: percent >= 30 && this.highestPercentSeen < 30 },
+        { th: 50, msg: getRandomMsg(msg50), val: percent >= 50 && this.highestPercentSeen < 50 },
+        { th: 70, msg: getRandomMsg(msg70), val: percent >= 70 && this.highestPercentSeen < 70 },
+        { th: 80, msg: getRandomMsg(msg80), val: percent >= 80 && this.highestPercentSeen < 80 },
+        { th: 90, msg: getRandomMsg(msg90), val: percent >= 90 && this.highestPercentSeen < 90 }
+      ];
+
+      milestones.forEach(m => {
+        if (m.val) {
+          this.showMilestoneToast(m.msg);
+          this.triggerMilestoneAnim(m.th);
+        }
+      });
+
+      if (percent === 100 && this.highestPercentSeen < 100) {
+        this.triggerCelebration(todayTasks);
+      }
+      this.highestPercentSeen = percent;
+    }
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -780,6 +816,190 @@ class App {
       });
     } else {
       window.location.reload(true);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // CÉLÉBRATIONS ET DÉFILÉ
+  // ─────────────────────────────────────────────────────────────
+  showMilestoneToast(msg) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = 'milestone-toast';
+    toast.innerHTML = msg;
+    container.appendChild(toast);
+    setTimeout(() => {
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 3500);
+  }
+
+  triggerMilestoneAnim(threshold) {
+    const container = document.getElementById('milestone-anim-container');
+    container.innerHTML = ''; // Nettoyer les anciennes anims
+    const el = document.createElement('div');
+    el.className = 'anim-emoji';
+    
+    if (threshold === 1) {
+      el.textContent = '🚀';
+      el.classList.add('anim-rocket');
+    } else if (threshold === 30) {
+      el.textContent = '🔥';
+      el.classList.add('anim-fire');
+    } else if (threshold === 50) {
+      el.textContent = '✨';
+      el.classList.add('anim-magic');
+    } else if (threshold === 70) {
+      el.textContent = '🏃‍♂️';
+      el.classList.add('anim-runner');
+    } else if (threshold === 80) {
+      el.textContent = '🏎️';
+      el.classList.add('anim-car');
+    } else if (threshold === 90) {
+      el.textContent = '🎯';
+      el.classList.add('anim-target');
+    }
+    
+    container.appendChild(el);
+    setTimeout(() => {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    }, 3000);
+  }
+
+  triggerCelebration(todayTasks) {
+    // Débloquer l'audio immédiatement (interaction utilisateur synchrone)
+    const audio = document.getElementById('parade-audio');
+    if (audio) {
+      audio.volume = 0;
+      audio.play().then(() => {
+        audio.pause();
+        audio.currentTime = 0;
+        audio.volume = 1;
+      }).catch(e => console.log("Audio unlock failed:", e));
+    }
+
+    const gifs = [
+      "https://media.giphy.com/media/3o7TKWe6bAEVqgMvO8/giphy.gif", // Basket
+      "https://media.giphy.com/media/qDPg6HNz2NfAk/giphy.gif", // Foot
+      "https://media.giphy.com/media/26u4cqiYI30juCOGY/giphy.gif", // Coupe
+      "https://media.giphy.com/media/3o7qDEq2bMbcbPRQ2c/giphy.gif", // KO MMA
+      "https://media.giphy.com/media/xUPGcxpCV81ebKh7Vu/giphy.gif", // Danse
+      "https://media.giphy.com/media/13CoXDiaCcCoyk/giphy.gif", // Minions
+      "https://media.giphy.com/media/l41YkxvU8c7J7Bba0/giphy.gif", // Winner
+      "https://media.giphy.com/media/3o6fJ1BM7R2EBRDnxK/giphy.gif", // Artifice
+      "https://media.giphy.com/media/5mYkpeGz8k7aMhxQZ7/giphy.gif"  // Trophy
+    ];
+    
+    // 10 options : 1 fois confettis purs, 9 fois des GIFs
+    const rand = Math.floor(Math.random() * 10);
+    
+    if (rand === 0) {
+      // Confettis seuls
+      this.fireConfetti();
+      setTimeout(() => this.startParade(todayTasks), 3000);
+    } else {
+      // GIF + légers confettis
+      this.fireConfetti();
+      const gifUrl = gifs[rand - 1];
+      const overlay = document.getElementById('celebration-overlay');
+      const img = document.getElementById('celebration-gif');
+      img.src = gifUrl;
+      img.style.display = 'block';
+      overlay.classList.add('active');
+      
+      setTimeout(() => {
+        overlay.classList.remove('active');
+        setTimeout(() => this.startParade(todayTasks), 400);
+      }, 4000);
+    }
+  }
+
+  fireConfetti() {
+    if (typeof confetti !== 'undefined') {
+      var duration = 3 * 1000;
+      var animationEnd = Date.now() + duration;
+      var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 10000 };
+
+      var interval = setInterval(function() {
+        var timeLeft = animationEnd - Date.now();
+        if (timeLeft <= 0) { return clearInterval(interval); }
+        var particleCount = 50 * (timeLeft / duration);
+        confetti(Object.assign({}, defaults, { particleCount, origin: { x: Math.random(), y: Math.random() - 0.2 } }));
+      }, 250);
+    }
+  }
+
+  startParade(todayTasks) {
+    const overlay = document.getElementById('parade-overlay');
+    const track = document.getElementById('parade-track');
+    
+    // Récupérer uniquement les tâches complétées aujourd'hui
+    const completedTasks = todayTasks.filter(t => this.isCompleted(t.id));
+    
+    track.innerHTML = '';
+    
+    completedTasks.forEach(task => {
+      const cat = this.getCategoryInfo(task.cat);
+      const iconHtml = this.renderIcon(cat);
+      const card = document.createElement('div');
+      card.className = 'parade-card';
+      card.style.borderLeft = `4px solid ${cat.color}`;
+      card.innerHTML = `
+        <div class="cat-icon" style="color: ${cat.color}">${iconHtml}</div>
+        <div class="parade-card-info">
+          <div class="parade-card-title">${task.name}</div>
+          <div class="parade-card-cat" style="color: ${cat.color}">${cat.name}</div>
+        </div>
+      `;
+      track.appendChild(card);
+    });
+
+    overlay.classList.add('active');
+    track.classList.remove('paused');
+    
+    // Lancer la musique du défilé
+    const audio = document.getElementById('parade-audio');
+    if (audio) {
+      audio.currentTime = 0;
+      audio.play().catch(e => console.log("Audio play prevented by browser:", e));
+    }
+    
+    // Calcul de la durée d'animation selon le nombre de tâches (ex: 3s par tâche)
+    const duration = Math.max(10, completedTasks.length * 3);
+    track.style.animation = `none`; // reset
+    void track.offsetWidth; // trigger reflow
+    track.style.animation = `paradeScroll ${duration}s linear forwards`;
+    
+    // Fermeture auto à la fin de l'animation
+    this.paradeTimeout = setTimeout(() => {
+      this.closeParade();
+    }, duration * 1000 + 2000);
+  }
+
+  toggleParadePause() {
+    const track = document.getElementById('parade-track');
+    const btn = document.getElementById('parade-pause-btn');
+    const audio = document.getElementById('parade-audio');
+    
+    if (track.classList.contains('paused')) {
+      track.classList.remove('paused');
+      btn.textContent = 'Pause';
+      if (audio) audio.play();
+    } else {
+      track.classList.add('paused');
+      btn.textContent = 'Reprendre';
+      if (audio) audio.pause();
+    }
+  }
+
+  closeParade() {
+    const overlay = document.getElementById('parade-overlay');
+    overlay.classList.remove('active');
+    if (this.paradeTimeout) clearTimeout(this.paradeTimeout);
+    
+    const audio = document.getElementById('parade-audio');
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
     }
   }
 }

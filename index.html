@@ -222,6 +222,41 @@
     </div>
   </div>
 
+  <!-- Toast Container pour les paliers -->
+  <div id="toast-container"></div>
+
+  <!-- Overlay Célébration (GIF) -->
+  <div class="celebration-overlay" id="celebration-overlay">
+    <div class="celebration-content" id="celebration-content">
+      <img id="celebration-gif" src="" alt="Célébration" style="display:none;">
+    </div>
+  </div>
+
+  <!-- Overlay Défilé -->
+  <div class="parade-overlay" id="parade-overlay">
+    <div class="parade-header">
+      <h2>Hommage aux accomplissements</h2>
+      <div class="parade-controls">
+        <button id="parade-pause-btn" class="btn secondary" onclick="app.toggleParadePause()">
+          Pause
+        </button>
+        <button class="btn secondary" onclick="app.closeParade()">Fermer</button>
+      </div>
+    </div>
+    <div class="parade-container">
+      <div class="parade-track" id="parade-track">
+        <!-- Tâches injectées dynamiquement -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Conteneur d'animations créatives (Paliers) -->
+  <div id="milestone-anim-container"></div>
+
+  <!-- Audio pour le défilé (MP3 public domain) -->
+  <audio id="parade-audio" src="https://freepd.com/music/Super%20Hero.mp3" preload="auto" loop></audio>
+
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script src="app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
