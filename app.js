@@ -450,7 +450,12 @@ class App {
             </div>
             <span class="task-days">${daysText}</span>
           </div>
-          <div class="task-checkbox">${checked ? checkIcon : ''}</div>
+          <div style="display:flex; align-items:center; gap:0.75rem;">
+            <button class="edit-today-btn" onclick="event.stopPropagation(); app.editRoutine('${task.id}')" title="Modifier la tâche">
+              ${editIcon}
+            </button>
+            <div class="task-checkbox">${checked ? checkIcon : ''}</div>
+          </div>
         </div>
         ${detailSection}
       </div>`;

@@ -671,6 +671,28 @@ main {
   cursor: grabbing;
 }
 
+.edit-today-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  opacity: 0.6;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: opacity 0.2s, background 0.2s;
+}
+.edit-today-btn svg {
+  width: 16px;
+  height: 16px;
+}
+.edit-today-btn:hover, .task-card:hover .edit-today-btn {
+  opacity: 1;
+  background: rgba(0,0,0,0.05);
+}
+
 /* === TOASTS / PALIERS === */
 #toast-container {
   position: fixed;
