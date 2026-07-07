@@ -954,14 +954,52 @@ class App {
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target.result);
-        if (!data.routines || !data.history) { alert("Format de fichier invalide."); return; }
-        this.categories = data.categories || [...defaultCategories];
-        this.routines   = data.routines.map(r => { delete r.type; delete r.options; return r; });
-        this.history    = data.history;
+        if (!data.routines) { alert("Format de fichier invalide."); return; }
+        
+        // --- LOGIQUE D'IMPORTATION FUSION (Ajout sans écrasement) ---
+        const catIdMap = {};
+        
+        // 1. Ajout des catégories importées
+        if (data.categories) {
+          data.categories.forEach(c => {
+            // Génération d'un nouvel ID unique pour éviter les conflits
+            const newId = 'cat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+            catIdMap[c.id] = newId;
+            c.id = newId;
+            this.categories.push(c);
+          });
+        }
+
+        // 2. Ajout des routines importées
+        if (data.routines) {
+          const clusterIdMap = {};
+          data.routines.forEach(r => {
+            delete r.type; delete r.options; // nettoyage legacy
+            const newId = 'rtn_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+            
+            // Mise à jour de la référence vers la nouvelle catégorie si elle faisait partie de l'import
+            if (r.cat && catIdMap[r.cat]) {
+              r.cat = catIdMap[r.cat];
+            }
+            
+            // Mise à jour de la référence cluster pour lier les alternatives importées entre elles
+            if (r.clusterId) {
+              if (!clusterIdMap[r.clusterId]) {
+                clusterIdMap[r.clusterId] = 'cluster_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+              }
+              r.clusterId = clusterIdMap[r.clusterId];
+            }
+            
+            r.id = newId;
+            this.routines.push(r);
+          });
+        }
+
+        // 3. L'historique n'est pas remplacé pour préserver la progression locale
         this.saveData();
         this.closeModal('modal-backup');
         this.render();
-        alert("Fichier importé avec succès !");
+        alert("Fichier importé avec succès ! Les routines ont été ajoutées sans écraser vos données.");
       } catch (err) {
         alert("Erreur de lecture. Le fichier n'est pas un JSON valide.");
       }
