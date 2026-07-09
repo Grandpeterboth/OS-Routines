@@ -511,6 +511,9 @@ class App {
 
     const hasDetail = task.detail && task.detail.trim().length > 0;
     const detailIndicator = hasDetail ? `<span class="task-detail-indicator" onclick="event.stopPropagation(); app.toggleDetail('${task.id}')" title="Voir les détails" id="detail-toggle-${task.id}"></span>` : '';
+    const expandBtn = hasDetail ? `<button class="task-detail-expand-btn" onclick="event.stopPropagation(); app.openDetailFullscreen('${task.id}', '${cat.color}')" title="Voir en plein écran">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+    </button>` : '';
     const detailSection = hasDetail ? `
       <div class="task-detail-content" id="detail-content-${task.id}">${task.detail.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
     ` : '';
@@ -525,6 +528,7 @@ class App {
             <div style="display:flex; align-items:center; gap:0.5rem;">
               <span class="task-name">${task.name}</span>
               ${detailIndicator}
+              ${expandBtn}
               ${resetBtn}
             </div>
             <span class="task-days">${daysText}</span>
@@ -542,6 +546,45 @@ class App {
       toggle.classList.toggle('open');
       content.classList.toggle('open');
     }
+  }
+
+  // Taille de police courante pour le plein écran
+  _detailFontSize = 16;
+
+  openDetailFullscreen(taskId, catColor) {
+    const task = this.routines.find(r => r.id === taskId);
+    if (!task || !task.detail) return;
+
+    const overlay = document.getElementById('detail-fullscreen-overlay');
+    const panel   = document.getElementById('detail-fullscreen-panel');
+    const title   = document.getElementById('detail-fullscreen-task-name');
+    const body    = document.getElementById('detail-fullscreen-body');
+
+    title.textContent = task.name;
+    body.textContent  = task.detail;
+    panel.style.setProperty('--detail-cat-color', catColor || 'var(--color-primary)');
+
+    // Restaurer la taille de police mémorisée
+    body.style.fontSize = this._detailFontSize + 'px';
+    document.getElementById('detail-font-size-label').textContent = this._detailFontSize + 'px';
+
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeDetailFullscreen(event) {
+    if (event && event.target !== document.getElementById('detail-fullscreen-overlay')) return;
+    const overlay = document.getElementById('detail-fullscreen-overlay');
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  adjustDetailFontSize(delta) {
+    this._detailFontSize = Math.min(32, Math.max(10, this._detailFontSize + delta));
+    const body = document.getElementById('detail-fullscreen-body');
+    if (body) body.style.fontSize = this._detailFontSize + 'px';
+    const label = document.getElementById('detail-font-size-label');
+    if (label) label.textContent = this._detailFontSize + 'px';
   }
 
   // ─────────────────────────────────────────────────────────────
