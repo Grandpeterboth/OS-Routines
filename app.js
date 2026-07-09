@@ -160,10 +160,13 @@ class App {
     list.innerHTML = options.map(opt => {
       const count = this.getHistoricalCount(opt.id);
       return `
-        <button class="cluster-choice-btn" onclick="app.selectClusterChoice('${clusterId}', '${opt.id}')">
-          <span>${opt.name}</span>
-          <span class="stat-badge">Fait ${count} fois</span>
-        </button>
+        <div class="cluster-choice-row">
+          <button class="cluster-choice-btn" onclick="app.selectClusterChoice('${clusterId}', '${opt.id}')">
+            <span>${opt.name}</span>
+            <span class="stat-badge">Fait ${count} fois</span>
+          </button>
+          <button class="reset-count-btn" onclick="app.resetRoutineCount('${clusterId}', '${opt.id}')" title="Réinitialiser le compteur de cette routine">${resetIcon}</button>
+        </div>
       `;
     }).join('');
     
@@ -192,6 +195,19 @@ class App {
     
     this.saveData();
     this.render();
+  }
+
+  resetRoutineCount(clusterId, routineId) {
+    if (confirm("Réinitialiser le compteur pour cette routine ?")) {
+      for (const date in this.history) {
+        if (!date.includes('_selections') && Array.isArray(this.history[date])) {
+          this.history[date] = this.history[date].filter(id => id !== routineId);
+        }
+      }
+      this.saveData();
+      this.render();
+      this.openClusterChoice(clusterId);
+    }
   }
 
   // ─────────────────────────────────────────────────────────────

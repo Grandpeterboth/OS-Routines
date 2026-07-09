@@ -498,6 +498,33 @@ main {
   border-radius: 99px;
 }
 
+.cluster-choice-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.cluster-choice-row .cluster-choice-btn {
+  flex: 1;
+}
+.reset-count-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  opacity: 0.4;
+  padding: 0.5rem;
+  cursor: pointer;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.reset-count-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  opacity: 1;
+}
+
 .cluster-choice-btn {
   display: flex;
   align-items: center;
