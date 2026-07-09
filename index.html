@@ -390,6 +390,24 @@
     </div>
   </div>
 
+  <!-- Modal Détail Plein Écran -->
+  <div class="detail-fullscreen-overlay" id="detail-fullscreen-overlay" onclick="app.closeDetailFullscreen(event)">
+    <div class="detail-fullscreen-panel" id="detail-fullscreen-panel">
+      <div class="detail-fullscreen-header">
+        <h2 class="detail-fullscreen-title" id="detail-fullscreen-task-name"></h2>
+        <button class="detail-fullscreen-close" onclick="app.closeDetailFullscreen()" title="Fermer">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="detail-fullscreen-font-controls">
+        <button class="font-size-btn" onclick="app.adjustDetailFontSize(-2)" title="Réduire le texte">A−</button>
+        <span class="font-size-label" id="detail-font-size-label">16px</span>
+        <button class="font-size-btn" onclick="app.adjustDetailFontSize(2)" title="Agrandir le texte">A+</button>
+      </div>
+      <div class="detail-fullscreen-body" id="detail-fullscreen-body"></div>
+    </div>
+  </div>
+
   <!-- Toast Container pour les paliers -->
   <div id="toast-container"></div>
 
