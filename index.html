@@ -43,17 +43,42 @@
 
       <!-- Manage Routines -->
       <div id="manage-routines-section">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-          <button class="btn primary" onclick="app.showRoutineModal()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Nouvelle Routine
-          </button>
+        
+        <!-- Filter Toolbar -->
+        <div class="filter-toolbar">
+          <div class="filter-header">
+            <div style="display:flex; gap:0.5rem; width:100%;">
+              <button class="btn primary new-routine-btn" style="flex:1;" onclick="app.showRoutineModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>Nouvelle Routine</span>
+              </button>
+              <button class="btn secondary" style="flex:0 0 auto; padding:0.75rem; border-radius:12px;" onclick="app.toggleSelectionMode()" title="Sélection multiple">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              </button>
+            </div>
+
+            <div class="filter-controls">
+              <div class="search-box">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="manage-search-input" placeholder="Rechercher..." oninput="app.renderManageRoutines()">
+              </div>
+              
+              <select id="manage-sort-select" class="form-control sort-select" onchange="app.renderManageRoutines()">
+                <option value="creation">🕒 Récents</option>
+                <option value="alpha">🔤 A-Z</option>
+                <option value="active">🟢 Actives d'abord</option>
+                <option value="sommeil">💤 En sommeil d'abord</option>
+              </select>
+            </div>
+          </div>
           
-          <select id="manage-sort-select" class="form-control" style="max-width: 200px; padding: 0.3rem 0.5rem; font-size: 0.85rem;" onchange="app.renderManageRoutines()">
-            <option value="creation">Ordre de création (défaut)</option>
-            <option value="alpha">Alphabétique (A-Z)</option>
-          </select>
+          <div class="filter-categories-scroll">
+            <div id="manage-filter-categories" class="filter-categories">
+              <!-- Peuplé dynamiquement par JS -->
+            </div>
+          </div>
         </div>
+
         <div id="manage-routines-container"></div>
       </div>
 
@@ -67,6 +92,16 @@
       </div>
     </div>
   </main>
+
+  <!-- Bulk Action Bar -->
+  <div id="bulk-action-bar" class="bulk-action-bar">
+    <span class="selected-count" id="bulk-selected-count">0 sélectionnée(s)</span>
+    <div style="display:flex; gap:0.5rem;">
+      <button class="btn secondary" style="padding:0.5rem; font-size:0.875rem;" onclick="app.toggleSelectionMode()">Annuler</button>
+      <button class="btn primary" style="padding:0.5rem; font-size:0.875rem;" onclick="app.showBulkEditModal()">Éditer</button>
+      <button class="btn primary" style="background:#ef4444; border-color:#ef4444; padding:0.5rem; font-size:0.875rem;" onclick="app.deleteSelectedRoutines()">Supprimer</button>
+    </div>
+  </div>
 
   <!-- Bottom Navigation -->
   <nav>
@@ -138,6 +173,53 @@
       <div class="modal-actions">
         <button class="btn secondary" onclick="app.closeModal('modal-routine')">Annuler</button>
         <button class="btn primary" onclick="app.saveRoutine()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Bulk Edit -->
+  <div class="modal-overlay" id="modal-bulk-edit">
+    <div class="modal-content">
+      <h2 class="modal-title">Édition Groupée</h2>
+      
+      <div class="form-group">
+        <label for="form-bulk-cat">Changer de rubrique</label>
+        <select id="form-bulk-cat" class="form-control">
+          <!-- Dynamically populated -->
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Modifier les jours</label>
+        <div style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:1rem;">
+          <label style="display:flex; align-items:center; gap:0.5rem; font-weight:normal;">
+            <input type="radio" name="bulk-days-option" value="keep" checked onchange="app.toggleBulkDaysSelector()">
+            Ne pas modifier
+          </label>
+          <label style="display:flex; align-items:center; gap:0.5rem; font-weight:normal;">
+            <input type="radio" name="bulk-days-option" value="clear" onchange="app.toggleBulkDaysSelector()">
+            Mettre en sommeil (retirer les jours)
+          </label>
+          <label style="display:flex; align-items:center; gap:0.5rem; font-weight:normal;">
+            <input type="radio" name="bulk-days-option" value="set" onchange="app.toggleBulkDaysSelector()">
+            Définir de nouveaux jours
+          </label>
+        </div>
+
+        <div class="days-selector" id="form-bulk-days" style="display:none; opacity:0.5; pointer-events:none;">
+          <button type="button" class="bulk-day-btn day-btn" data-day="1">L</button>
+          <button type="button" class="bulk-day-btn day-btn" data-day="2">M</button>
+          <button type="button" class="bulk-day-btn day-btn" data-day="3">M</button>
+          <button type="button" class="bulk-day-btn day-btn" data-day="4">J</button>
+          <button type="button" class="bulk-day-btn day-btn" data-day="5">V</button>
+          <button type="button" class="bulk-day-btn day-btn" data-day="6">S</button>
+          <button type="button" class="bulk-day-btn day-btn" data-day="0">D</button>
+        </div>
+      </div>
+      
+      <div class="modal-actions">
+        <button class="btn secondary" onclick="app.closeModal('modal-bulk-edit')">Annuler</button>
+        <button class="btn primary" onclick="app.applyBulkEdit()">Appliquer</button>
       </div>
     </div>
   </div>
@@ -238,6 +320,39 @@
       
       <div class="modal-actions" style="margin-top:1.5rem;">
         <button class="btn secondary" style="width:100%" onclick="app.closeModal('modal-cluster-choice')">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Suppression Catégorie -->
+  <div class="modal-overlay" id="modal-delete-category">
+    <div class="modal-content">
+      <h2 class="modal-title" style="color: #ef4444;">Supprimer la rubrique</h2>
+      <p id="delete-cat-message" style="font-size:0.875rem; color:var(--text-main); margin-bottom:1rem;"></p>
+      
+      <input type="hidden" id="delete-cat-id">
+
+      <div class="form-group" id="delete-cat-options-group">
+        <label>Que voulez-vous faire des routines associées ?</label>
+        <div style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.5rem;">
+          <label style="display:flex; align-items:center; gap:0.5rem; font-weight:normal; cursor:pointer;">
+            <input type="radio" name="delete_cat_action" value="reassign" checked onchange="document.getElementById('delete-cat-reassign-select').disabled = false;">
+            Déplacer vers une autre rubrique :
+          </label>
+          <select id="delete-cat-reassign-select" class="form-control" style="margin-left: 1.5rem; width: calc(100% - 1.5rem);">
+            <!-- Peuplé dynamiquement -->
+          </select>
+          
+          <label style="display:flex; align-items:center; gap:0.5rem; font-weight:normal; cursor:pointer; margin-top:0.5rem; color:#ef4444;">
+            <input type="radio" name="delete_cat_action" value="delete" onchange="document.getElementById('delete-cat-reassign-select').disabled = true;">
+            Supprimer définitivement ces routines
+          </label>
+        </div>
+      </div>
+      
+      <div class="modal-actions" style="margin-top:1.5rem;">
+        <button class="btn secondary" onclick="app.closeModal('modal-delete-category')">Annuler</button>
+        <button class="btn primary" style="background:#ef4444; border-color:#ef4444;" onclick="app.confirmDeleteCategory()">Confirmer</button>
       </div>
     </div>
   </div>

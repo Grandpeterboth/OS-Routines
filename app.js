@@ -61,6 +61,9 @@ class App {
     this.currentDateStr  = this.getTodayStr();
     this.currentTab      = 'today';
     this.currentManageTab = 'routines';
+    this.manageCategoryFilters = [];
+    this.isSelectionMode = false;
+    this.selectedRoutines = new Set();
     this.init();
   }
 
@@ -93,7 +96,17 @@ class App {
   loadData() {
     const savedCats = localStorage.getItem('os-categories');
     this.categories = savedCats ? JSON.parse(savedCats) : [...defaultCategories];
-    if (!savedCats) localStorage.setItem('os-categories', JSON.stringify(this.categories));
+    
+    if (!this.categories.find(c => c.id === 'cat_multi_decisions')) {
+      this.categories.unshift({
+        id: 'cat_multi_decisions',
+        name: 'Décisions Multi-Rubriques',
+        color: '#0052FF',
+        iconType: 'svg',
+        iconVal: 'boite'
+      });
+      localStorage.setItem('os-categories', JSON.stringify(this.categories));
+    }
 
     const savedRoutines = localStorage.getItem('os-routines');
     if (savedRoutines) {
@@ -348,10 +361,83 @@ class App {
       if (typeof t.displayOrder !== 'number') t.displayOrder = i;
     });
 
+    const selections = this.getSelectionsForToday();
+    
+    // --- DECISIONS MULTI-RUBRIQUES ---
+    const multiCatClustersHtml = [];
+    const tasksToRenderNormally = [];
+    const processedPendingClusters = [];
+
+    if (isTodayView) {
+      const clustersMap = {};
+      tasks.forEach(t => {
+        if (t.clusterId) {
+          if (!clustersMap[t.clusterId]) clustersMap[t.clusterId] = [];
+          clustersMap[t.clusterId].push(t);
+        }
+      });
+
+      tasks.forEach(t => {
+        if (t.clusterId && !selections[t.clusterId]) {
+          const siblings = clustersMap[t.clusterId];
+          const uniqueCats = new Set(siblings.map(s => s.displayCat || s.cat));
+          
+          if (uniqueCats.size > 1) {
+            if (!processedPendingClusters.includes(t.clusterId)) {
+              processedPendingClusters.push(t.clusterId);
+              const siblingNames = siblings.map(s => s.name).join(' ou ');
+              multiCatClustersHtml.push(`
+                <div class="task-cluster-pending" style="--color-boite: var(--color-primary); --color-boite-light: rgba(0,82,255,0.05)" onclick="app.openClusterChoice('${t.clusterId}')">
+                  ${refreshIcon} Choix : ${siblingNames}
+                </div>
+              `);
+            }
+            return; // Exclu du rendu normal
+          }
+        }
+        tasksToRenderNormally.push(t);
+      });
+    } else {
+      tasksToRenderNormally.push(...tasks);
+    }
+
+    if (multiCatClustersHtml.length > 0) {
+      const decisionCat = this.categories.find(c => c.id === 'cat_multi_decisions');
+      const iconHtml = decisionCat ? this.renderIcon(decisionCat) : '🎯';
+      const catName = decisionCat ? decisionCat.name : 'Décisions Multi-Rubriques';
+      const catColor = decisionCat ? decisionCat.color : 'var(--color-primary)';
+
+      const decisionDiv = document.createElement('div');
+      decisionDiv.className = 'decision-section';
+      decisionDiv.style.border = `1px solid ${catColor}33`;
+      decisionDiv.style.boxShadow = `0 4px 20px ${catColor}11`;
+      
+      let htmlContent = multiCatClustersHtml.join('');
+      // Update pending clusters colors to match the category color
+      htmlContent = htmlContent.replace(/--color-boite: var\(--color-primary\);/g, `--color-boite: ${catColor};`);
+      htmlContent = htmlContent.replace(/--color-boite-light: rgba\(0,82,255,0\.05\)/g, `--color-boite-light: ${catColor}11`);
+
+      decisionDiv.innerHTML = `
+        <div class="decision-header" style="color: ${catColor}">
+          <div class="cat-icon-display">${iconHtml}</div> ${catName}
+        </div>
+        <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+          Ces tâches peuvent aller dans différentes rubriques. Faites votre choix !
+        </div>
+        ${htmlContent}
+      `;
+      container.appendChild(decisionDiv);
+    }
+
+    // --- RENDU NORMAL ---
     const byCategory = {};
     this.categories.forEach(c => byCategory[c.id] = []);
-    tasks.forEach(t => { 
-      const catId = byCategory[t.displayCat] ? t.displayCat : (byCategory[t.cat] ? t.cat : null);
+    tasksToRenderNormally.forEach(t => { 
+      let catId;
+      if (t.clusterId && selections[t.clusterId]) {
+        if (t.id !== selections[t.clusterId]) return; // Skip unchosen siblings
+      }
+      catId = byCategory[t.displayCat] ? t.displayCat : (byCategory[t.cat] ? t.cat : null);
       if (catId) byCategory[catId].push(t); 
     });
 
@@ -372,39 +458,34 @@ class App {
       <div class="task-list" ondragover="app.handleDragOverCat(event)" ondrop="app.handleDropOnCat(event, '${cat.id}')">`;
 
       const processedClusters = [];
-      const selections = this.getSelectionsForToday();
 
       catTasks.forEach(task => {
         const originalCat = this.getCategoryInfo(task.cat);
         
         if (!task.clusterId) {
-          // Tâche normale
           html += this.buildSingleCardHtml(task, originalCat);
         } else {
-          // Tâche avec Cluster
           if (processedClusters.includes(task.clusterId)) return; 
           processedClusters.push(task.clusterId);
           
-          const siblings = catTasks.filter(t => t.clusterId === task.clusterId);
+          const allSiblings = tasks.filter(t => t.clusterId === task.clusterId);
           
-          if (siblings.length === 1 || !isTodayView) {
-            // Si c'est la seule tâche de ce cluster ce jour, ou vue globale -> normale
+          if (allSiblings.length === 1 || !isTodayView) {
             html += this.buildSingleCardHtml(task, originalCat);
           } else {
-            // Plusieurs tâches -> Gestion du choix
             const chosenId = selections[task.clusterId];
             if (chosenId) {
-              const chosenTask = siblings.find(s => s.id === chosenId);
-              if (chosenTask) {
-                const chosenCat = this.getCategoryInfo(chosenTask.cat);
-                html += this.buildSingleCardHtml(chosenTask, chosenCat, task.clusterId);
-              }
+              html += this.buildSingleCardHtml(task, originalCat, task.clusterId);
             } else {
-              // Aucun choix fait, afficher le bouton d'attente
-              const siblingNames = siblings.map(s => s.name).join(' ou ');
+              const siblingNames = allSiblings.map(s => s.name).join(' ou ');
               html += `
-                <div class="task-cluster-pending" style="--color-boite: ${cat.color}; --color-boite-light: ${cat.color}11" onclick="app.openClusterChoice('${task.clusterId}')">
-                  ${refreshIcon} Choix : ${siblingNames}
+                <div class="task-card-wrapper" draggable="true" 
+                     ondragstart="app.handleDragStart(event, '${task.id}')" 
+                     ondragover="app.handleDragOverTask(event, '${task.id}')" 
+                     ondrop="app.handleDropOnTask(event, '${task.id}')">
+                  <div class="task-cluster-pending" style="--color-boite: ${cat.color}; --color-boite-light: ${cat.color}11" onclick="app.openClusterChoice('${task.clusterId}')">
+                    ${refreshIcon} Choix : ${siblingNames}
+                  </div>
                 </div>
               `;
             }
@@ -495,9 +576,15 @@ class App {
     const targetTask = this.routines.find(r => r.id === targetId);
     if (!draggedTask || !targetTask) return;
     
-    draggedTask.displayCat = targetTask.displayCat || targetTask.cat;
-    // Insert BEFORE the target task
-    draggedTask.displayOrder = (targetTask.displayOrder || 0) - 0.5;
+    const tasksToUpdate = draggedTask.clusterId 
+      ? this.routines.filter(r => r.clusterId === draggedTask.clusterId)
+      : [draggedTask];
+      
+    tasksToUpdate.forEach(t => {
+      t.displayCat = targetTask.displayCat || targetTask.cat;
+      // Insert BEFORE the target task
+      t.displayOrder = (targetTask.displayOrder || 0) - 0.5;
+    });
     
     this.normalizeDisplayOrders();
     this.saveData();
@@ -512,14 +599,20 @@ class App {
     const draggedTask = this.routines.find(r => r.id === draggedId);
     if (!draggedTask) return;
     
-    draggedTask.displayCat = catId;
-    
     const catTasks = this.routines.filter(r => (r.displayCat || r.cat) === catId);
     let maxOrder = 0;
     if (catTasks.length > 0) {
       maxOrder = Math.max(...catTasks.map(t => t.displayOrder || 0));
     }
-    draggedTask.displayOrder = maxOrder + 1;
+    
+    const tasksToUpdate = draggedTask.clusterId 
+      ? this.routines.filter(r => r.clusterId === draggedTask.clusterId)
+      : [draggedTask];
+      
+    tasksToUpdate.forEach(t => {
+      t.displayCat = catId;
+      t.displayOrder = maxOrder + 1;
+    });
     
     this.normalizeDisplayOrders();
     this.saveData();
@@ -539,35 +632,261 @@ class App {
   // ─────────────────────────────────────────────────────────────
   // GESTION DES ROUTINES (CRUD)
   // ─────────────────────────────────────────────────────────────
+  toggleManageCategoryFilter(catId) {
+    const idx = this.manageCategoryFilters.indexOf(catId);
+    if (idx > -1) {
+      this.manageCategoryFilters.splice(idx, 1);
+    } else {
+      this.manageCategoryFilters.push(catId);
+    }
+    this.renderManageRoutines();
+  }
+
+  // --- SELECTION MULTIPLE ---
+  toggleSelectionMode() {
+    this.isSelectionMode = !this.isSelectionMode;
+    this.selectedRoutines.clear();
+    
+    const bulkBar = document.getElementById('bulk-action-bar');
+    if (bulkBar) {
+      if (this.isSelectionMode) bulkBar.classList.add('active');
+      else bulkBar.classList.remove('active');
+    }
+    
+    this.updateBulkSelectionUI();
+    this.renderManageRoutines();
+  }
+
+  toggleRoutineSelection(id) {
+    if (!this.isSelectionMode) return;
+    if (this.selectedRoutines.has(id)) {
+      this.selectedRoutines.delete(id);
+    } else {
+      this.selectedRoutines.add(id);
+    }
+    this.updateBulkSelectionUI();
+    this.renderManageRoutines();
+  }
+
+  updateBulkSelectionUI() {
+    const countSpan = document.getElementById('bulk-selected-count');
+    if (countSpan) {
+      countSpan.textContent = `${this.selectedRoutines.size} sélectionnée(s)`;
+    }
+  }
+
+  deleteSelectedRoutines() {
+    if (this.selectedRoutines.size === 0) return;
+    
+    if (confirm(`Supprimer définitivement ces ${this.selectedRoutines.size} routines ?`)) {
+      const idsToDelete = Array.from(this.selectedRoutines);
+      this.routines = this.routines.filter(r => !idsToDelete.includes(r.id));
+      
+      // Remove from history
+      Object.keys(this.history).forEach(date => {
+        idsToDelete.forEach(id => {
+          delete this.history[date][id];
+        });
+      });
+      
+      this.isSelectionMode = false;
+      this.selectedRoutines.clear();
+      
+      const bulkBar = document.getElementById('bulk-action-bar');
+      if (bulkBar) bulkBar.classList.remove('active');
+      
+      this.saveData();
+      this.render();
+    }
+  }
+
+  showBulkEditModal() {
+    if (this.selectedRoutines.size === 0) return;
+    
+    const modal = document.getElementById('modal-bulk-edit');
+    const selectCat = document.getElementById('form-bulk-cat');
+    
+    const editableCats = this.categories.filter(c => c.id !== 'cat_multi_decisions');
+    selectCat.innerHTML = '<option value="">Ne pas modifier</option>' + 
+                          editableCats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                          
+    document.querySelector('input[name="bulk-days-option"][value="keep"]').checked = true;
+    this.toggleBulkDaysSelector();
+    
+    document.querySelectorAll('.bulk-day-btn').forEach(b => b.classList.remove('selected'));
+    
+    modal.classList.add('active');
+  }
+
+  toggleBulkDaysSelector() {
+    const val = document.querySelector('input[name="bulk-days-option"]:checked').value;
+    const daysContainer = document.getElementById('form-bulk-days');
+    if (val === 'set') {
+      daysContainer.style.display = 'flex';
+      daysContainer.style.opacity = '1';
+      daysContainer.style.pointerEvents = 'auto';
+    } else {
+      daysContainer.style.display = 'none';
+      daysContainer.style.opacity = '0.5';
+      daysContainer.style.pointerEvents = 'none';
+    }
+  }
+
+  applyBulkEdit() {
+    const newCatId = document.getElementById('form-bulk-cat').value;
+    const daysOption = document.querySelector('input[name="bulk-days-option"]:checked').value;
+    
+    let newDays = null;
+    if (daysOption === 'clear') {
+      newDays = [];
+    } else if (daysOption === 'set') {
+      newDays = [];
+      document.querySelectorAll('.bulk-day-btn.selected').forEach(btn => {
+        newDays.push(parseInt(btn.getAttribute('data-day')));
+      });
+    }
+    
+    const idsToEdit = Array.from(this.selectedRoutines);
+    
+    this.routines.forEach(r => {
+      if (idsToEdit.includes(r.id)) {
+        if (newCatId) {
+          r.cat = newCatId;
+          if (r.displayCat) r.displayCat = newCatId;
+        }
+        if (newDays !== null) {
+          r.days = [...newDays];
+        }
+      }
+    });
+    
+    this.saveData();
+    this.closeModal('modal-bulk-edit');
+    
+    this.isSelectionMode = false;
+    this.selectedRoutines.clear();
+    const bulkBar = document.getElementById('bulk-action-bar');
+    if (bulkBar) bulkBar.classList.remove('active');
+    
+    this.render();
+  }
+
   renderManageRoutines() {
     const container = document.getElementById('manage-routines-container');
     const sortSelect = document.getElementById('manage-sort-select');
+    const searchInput = document.getElementById('manage-search-input');
+    const filterCatContainer = document.getElementById('manage-filter-categories');
+    
     container.innerHTML = '';
     
-    let sortedRoutines = [...this.routines];
-    if (sortSelect && sortSelect.value === 'alpha') {
-      sortedRoutines.sort((a, b) => a.name.localeCompare(b.name, 'fr', {sensitivity: 'base'}));
+    if (filterCatContainer) {
+      filterCatContainer.innerHTML = this.categories.map(cat => {
+        const isActive = this.manageCategoryFilters.includes(cat.id);
+        const iconHtml = this.renderIcon(cat);
+        return `<div class="cat-pill ${isActive ? 'active' : ''}" style="--cat-color: ${cat.color}" onclick="app.toggleManageCategoryFilter('${cat.id}')">
+          ${iconHtml} ${cat.name}
+        </div>`;
+      }).join('');
+    }
+    
+    let filteredRoutines = [...this.routines];
+    
+    if (this.manageCategoryFilters.length > 0) {
+      filteredRoutines = filteredRoutines.filter(r => this.manageCategoryFilters.includes(r.cat) || this.manageCategoryFilters.includes(r.displayCat));
+    }
+    
+    const searchTxt = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    if (searchTxt) {
+      filteredRoutines = filteredRoutines.filter(r => r.name.toLowerCase().includes(searchTxt));
     }
 
-    sortedRoutines.forEach(task => {
+    const sortVal = sortSelect ? sortSelect.value : 'creation';
+    if (sortVal === 'alpha') {
+      filteredRoutines.sort((a, b) => a.name.localeCompare(b.name, 'fr', {sensitivity: 'base'}));
+    } else if (sortVal === 'active') {
+      filteredRoutines.sort((a, b) => {
+        if (a.days.length === 0 && b.days.length > 0) return 1;
+        if (a.days.length > 0 && b.days.length === 0) return -1;
+        return 0;
+      });
+    } else if (sortVal === 'sommeil') {
+      filteredRoutines.sort((a, b) => {
+        if (a.days.length === 0 && b.days.length > 0) return -1;
+        if (a.days.length > 0 && b.days.length === 0) return 1;
+        return 0;
+      });
+    }
+
+    const activeRoutines = filteredRoutines.filter(r => r.days.length > 0);
+    const dormantRoutines = filteredRoutines.filter(r => r.days.length === 0);
+
+    const renderCard = (task, targetContainer) => {
       const cat      = this.getCategoryInfo(task.cat);
-      const daysText = task.days.length === 7 ? 'Tous les jours' : task.days.map(d => dayNames[d]).join(', ');
+      const daysText = task.days.length === 0 ? 'En sommeil' : (task.days.length === 7 ? 'Tous les jours' : task.days.map(d => dayNames[d]).join(', '));
       const div      = document.createElement('div');
-      div.className  = 'edit-task-card';
+      
+      const isSelected = this.selectedRoutines.has(task.id);
+      
+      div.className  = 'edit-task-card' + (this.isSelectionMode ? ' selectable' : '') + (isSelected ? ' selected' : '');
+      if (this.isSelectionMode) {
+        div.onclick = () => this.toggleRoutineSelection(task.id);
+      }
 
       let badge = task.clusterId ? `<span class="group-badge" style="background:${cat.color}22; color:${cat.color}; font-size:0.7rem; margin-left:6px;">Liée (Alternative)</span>` : '';
 
-      div.innerHTML = `
-        <div class="task-info">
-          <span class="task-name" style="color:var(--text-main)">${task.name}${badge}</span>
-          <span class="task-days">${cat.name} • ${daysText}</span>
-        </div>
-        <div class="edit-actions">
-          <button class="icon-btn primary" onclick="app.editRoutine('${task.id}')">${editIcon}</button>
-          <button class="icon-btn danger"  onclick="app.deleteRoutine('${task.id}')">${trashIcon}</button>
-        </div>`;
-      container.appendChild(div);
-    });
+      if (this.isSelectionMode) {
+        div.innerHTML = `
+          <div class="task-info">
+            <span class="task-name" style="color:var(--text-main)">${task.name}${badge}</span>
+            <span class="task-days">${cat.name} • ${daysText}</span>
+          </div>
+          <div class="bulk-checkbox">
+            ${checkIcon}
+          </div>`;
+      } else {
+        div.innerHTML = `
+          <div class="task-info">
+            <span class="task-name" style="color:var(--text-main)">${task.name}${badge}</span>
+            <span class="task-days">${cat.name} • ${daysText}</span>
+          </div>
+          <div class="edit-actions">
+            <button class="icon-btn primary" onclick="app.editRoutine('${task.id}')">${editIcon}</button>
+            <button class="icon-btn danger"  onclick="app.deleteRoutine('${task.id}')">${trashIcon}</button>
+          </div>`;
+      }
+      targetContainer.appendChild(div);
+    };
+
+    if (sortVal === 'sommeil') {
+      if (dormantRoutines.length > 0) {
+        const dormantHeader = document.createElement('div');
+        dormantHeader.innerHTML = '<h3 style="margin-top: 1rem; margin-bottom: 1rem; color: var(--text-muted); font-size: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Routines en sommeil</h3>';
+        container.appendChild(dormantHeader);
+        const dormantContainer = document.createElement('div');
+        dormantContainer.style.opacity = '0.7';
+        container.appendChild(dormantContainer);
+        dormantRoutines.forEach(task => renderCard(task, dormantContainer));
+      }
+      if (activeRoutines.length > 0) {
+        const activeHeader = document.createElement('div');
+        activeHeader.innerHTML = '<h3 style="margin-top: 2rem; margin-bottom: 1rem; color: var(--text-muted); font-size: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Routines actives</h3>';
+        container.appendChild(activeHeader);
+        const activeContainer = document.createElement('div');
+        container.appendChild(activeContainer);
+        activeRoutines.forEach(task => renderCard(task, activeContainer));
+      }
+    } else {
+      activeRoutines.forEach(task => renderCard(task, container));
+      if (dormantRoutines.length > 0) {
+        const dormantHeader = document.createElement('div');
+        dormantHeader.innerHTML = '<h3 style="margin-top: 2rem; margin-bottom: 1rem; color: var(--text-muted); font-size: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Routines en sommeil</h3>';
+        container.appendChild(dormantHeader);
+        const dormantContainer = document.createElement('div');
+        dormantContainer.style.opacity = '0.7';
+        container.appendChild(dormantContainer);
+        dormantRoutines.forEach(task => renderCard(task, dormantContainer));
+      }
+    }
   }
 
   showRoutineModal(id = null) {
@@ -575,7 +894,8 @@ class App {
     const titleEl   = document.getElementById('modal-routine-title');
     const selectCat = document.getElementById('form-routine-cat');
 
-    selectCat.innerHTML = this.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    const editableCats = this.categories.filter(c => c.id !== 'cat_multi_decisions');
+    selectCat.innerHTML = editableCats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
     document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('selected'));
 
     let currentClusterId = null;
@@ -594,7 +914,7 @@ class App {
       document.getElementById('form-routine-id').value   = '';
       document.getElementById('form-routine-name').value = '';
       document.getElementById('form-routine-detail').value = '';
-      if (this.categories.length > 0) selectCat.value = this.categories[0].id;
+      if (editableCats.length > 0) selectCat.value = editableCats[0].id;
     }
 
     // Peupler les cases à cocher de cluster
@@ -603,7 +923,7 @@ class App {
     
     // Peupler le menu déroulant des rubriques (sans iconHtml pour éviter les tags/undefined)
     catSelect.innerHTML = '<option value="">Sélectionnez une rubrique pour voir ses routines...</option>' + 
-                          this.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                          editableCats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
                           
     // Peupler toutes les checkboxes, masquées par défaut
     clusterList.innerHTML = this.routines
@@ -665,7 +985,6 @@ class App {
     document.querySelectorAll('.day-btn.selected').forEach(b => days.push(parseInt(b.getAttribute('data-day'))));
 
     if (!name)             { alert("Veuillez saisir un nom."); return; }
-    if (days.length === 0) { alert("Sélectionnez au moins un jour."); return; }
 
     const routine = { id, name, cat, days };
     if (detail) routine.detail = detail;
@@ -858,16 +1177,71 @@ class App {
   editCategory(id) { this.showCategoryModal(id); }
 
   deleteCategory(id) {
-    const count = this.routines.filter(r => r.cat === id).length;
-    if (count > 0) {
-      alert(`Impossible de supprimer : ${count} routine(s) sont associées à cette rubrique.`);
+    if (id === 'cat_multi_decisions') {
+      alert("Impossible de supprimer cette rubrique système.");
       return;
     }
-    if (confirm("Supprimer cette rubrique ?")) {
-      this.categories = this.categories.filter(c => c.id !== id);
-      this.saveData();
-      this.render();
+
+    const routinesToMove = this.routines.filter(r => r.cat === id);
+    const count = routinesToMove.length;
+    
+    if (count > 0) {
+      document.getElementById('delete-cat-id').value = id;
+      
+      const cat = this.categories.find(c => c.id === id);
+      document.getElementById('delete-cat-message').innerHTML = `La rubrique <b>${cat ? cat.name : 'inconnue'}</b> contient <b>${count} routine(s)</b> associées.`;
+      
+      const select = document.getElementById('delete-cat-reassign-select');
+      const otherCats = this.categories.filter(c => c.id !== id);
+      select.innerHTML = otherCats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        
+      if (otherCats.length === 0) {
+        select.innerHTML = `<option value="">Aucune autre rubrique disponible</option>`;
+        select.disabled = true;
+        document.querySelector('input[name="delete_cat_action"][value="delete"]').checked = true;
+        document.querySelector('input[name="delete_cat_action"][value="reassign"]').disabled = true;
+      } else {
+        select.disabled = false;
+        document.querySelector('input[name="delete_cat_action"][value="reassign"]').checked = true;
+        document.querySelector('input[name="delete_cat_action"][value="reassign"]').disabled = false;
+      }
+      
+      document.getElementById('modal-delete-category').classList.add('active');
+      return;
     }
+    
+    if (confirm("Supprimer définitivement cette rubrique ?")) {
+      this.executeDeleteCategory(id, 'none');
+    }
+  }
+
+  confirmDeleteCategory() {
+    const id = document.getElementById('delete-cat-id').value;
+    const action = document.querySelector('input[name="delete_cat_action"]:checked').value;
+    const newCatId = document.getElementById('delete-cat-reassign-select').value;
+    
+    if (action === 'reassign' && !newCatId) {
+      alert("Veuillez choisir une rubrique de destination.");
+      return;
+    }
+    
+    this.executeDeleteCategory(id, action, newCatId);
+    this.closeModal('modal-delete-category');
+  }
+  
+  executeDeleteCategory(id, action, newCatId = null) {
+    if (action === 'reassign') {
+      this.routines.forEach(r => {
+        if (r.cat === id) r.cat = newCatId;
+        if (r.displayCat === id) r.displayCat = newCatId;
+      });
+    } else if (action === 'delete') {
+      this.routines = this.routines.filter(r => r.cat !== id);
+    }
+    
+    this.categories = this.categories.filter(c => c.id !== id);
+    this.saveData();
+    this.render();
   }
 
   moveCategoryUp(id) {

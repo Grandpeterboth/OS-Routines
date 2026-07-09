@@ -1,0 +1,97 @@
+{
+  "categories": [
+    {
+      "id": "phys",
+      "name": "Physique & Récupération",
+      "color": "#FF6D00",
+      "iconType": "svg",
+      "iconVal": "sport"
+    },
+    {
+      "id": "cult",
+      "name": "Culture & Focus",
+      "color": "#00C853",
+      "iconType": "svg",
+      "iconVal": "book"
+    }
+  ],
+  "routines": [
+    {
+      "id": "rtn_hydration",
+      "name": "Hydratation 2-2.5L",
+      "cat": "phys",
+      "days": [0,1,2,3,4,5,6],
+      "detail": "Boire 2 à 2,5L d’eau chaque jour, même sans sensation de soif."
+    },
+    {
+      "id": "rtn_piano",
+      "name": "Ancrage Piano + Respiration",
+      "cat": "cult",
+      "days": [0,1,2,3,4,5,6],
+      "detail": "2min respiration tactique (4s inspire, 4s pause, 4s expire, 4s pause) puis session piano 20-45min."
+    },
+    {
+      "id": "rtn_squat",
+      "name": "Squats lents",
+      "cat": "phys",
+      "days": [1,3,5],
+      "detail": "Descente 5s, remontée normale, 3 séries de 10."
+    },
+    {
+      "id": "rtn_fentes",
+      "name": "Fentes latérales alternées",
+      "cat": "phys",
+      "days": [1,3,5],
+      "detail": "3 séries de 12."
+    },
+    {
+      "id": "rtn_planche",
+      "name": "Planche abdominale",
+      "cat": "phys",
+      "days": [1,3,5],
+      "detail": "3 séries de 45s."
+    },
+    {
+      "id": "rtn_departs",
+      "name": "Départs au sol",
+      "cat": "phys",
+      "days": [2,4,6],
+      "detail": "10 répétitions, position assise ou couchée, se relever rapidement en garde."
+    },
+    {
+      "id": "rtn_deplacements",
+      "name": "Déplacements latéraux bas",
+      "cat": "phys",
+      "days": [2,4,6],
+      "detail": "Pas chassés sur 3m, rester proche du sol, 4 séries de 30s."
+    },
+    {
+      "id": "rtn_rebonds",
+      "name": "Rebonds contre un mur",
+      "cat": "phys",
+      "days": [2,4,6],
+      "detail": "Lancer balle de tennis fort contre le mur, la rattraper d’une main, 3min continu."
+    },
+    {
+      "id": "rtn_etirements",
+      "name": "Étirements actifs",
+      "cat": "phys",
+      "days": [0,1,2,3,4,5,6],
+      "detail": "10min d’étirements dynamiques pour rafraîchir le corps."
+    },
+    {
+      "id": "rtn_tennis",
+      "name": "Réactivité balle de tennis",
+      "cat": "phys",
+      "days": [0],
+      "detail": "5min de frappes rapides pour préparer le retour sur le terrain."
+    },
+    {
+      "id": "rtn_vbike_culture",
+      "name": "Vélo électrique + sortie culturelle",
+      "cat": "cult",
+      "days": [0,2,4],
+      "detail": "3h minimum de vélo à faible effort, combiné avec visite d’exposition, musée, conférence ou cinéma indépendant."
+    }
+  ]
+}
