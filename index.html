@@ -274,36 +274,69 @@
   <!-- Modal: Backup/Restore -->
   <div class="modal-overlay" id="modal-backup">
     <div class="modal-content">
-      <h2 class="modal-title">Sauvegarde / Restauration</h2>
+      <h2 class="modal-title">Sauvegarde & Restauration</h2>
       
-      <div class="form-group">
-        <label for="backup-data">Données JSON</label>
-        <textarea id="backup-data" class="form-control" rows="8" placeholder="Collez ici les données à restaurer..."></textarea>
-      </div>
-      
-      <div class="modal-actions" style="flex-wrap: wrap;">
-        <button class="btn secondary" onclick="app.closeModal('modal-backup')">Fermer</button>
-        <button class="btn primary" onclick="app.copyBackup()">Copier</button>
-        <button class="btn secondary" style="background:#ef4444;color:white;" onclick="app.restoreBackup()">Restaurer</button>
-      </div>
-
-      <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.5rem;">
-        <input type="file" id="backup-file-input" accept=".json" style="display:none" onchange="app.handleFileImport(event)">
+      <!-- EXPORT SECTION -->
+      <div style="margin-bottom: 2rem;">
+        <h3 style="font-size: 1rem; margin-bottom: 0.5rem; color: var(--text-main);">Exporter des données</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Téléchargez un fichier de sauvegarde (.json) contenant vos données.</p>
+        
+        <div class="form-group">
+          <label>Que voulez-vous exporter ?</label>
+          <select id="export-target" class="form-control">
+            <option value="all">Toutes les données (Rubriques, Routines, Historique)</option>
+            <!-- Options dynamiques -->
+          </select>
+        </div>
+        
         <button class="btn primary" onclick="app.exportToFile()">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Exporter en fichier (.json)
+          Exporter en fichier
         </button>
+      </div>
+      
+      <!-- IMPORT SECTION -->
+      <div style="padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+        <h3 style="font-size: 1rem; margin-bottom: 0.5rem; color: var(--text-main);">Importer des données</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Restaurez vos données à partir d'un fichier de sauvegarde (.json).</p>
+        
+        <input type="file" id="backup-file-input" accept=".json" style="display:none" onchange="app.handleFileImport(event)">
         <button class="btn secondary" onclick="app.triggerFileImport()">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          Importer depuis un fichier
+          Importer un fichier
         </button>
       </div>
 
-      <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-color); text-align: center;">
-        <button class="btn secondary" onclick="app.forceUpdate()" style="font-size: 0.75rem; padding: 0.5rem; width: auto; margin: 0 auto; display: inline-flex;">
+      <div class="modal-actions" style="margin-top: 2rem;">
+        <button class="btn secondary" onclick="app.closeModal('modal-backup')">Fermer</button>
+      </div>
+
+      <!-- FORCE UPDATE -->
+      <div style="margin-top: 1rem; padding-top: 1rem; text-align: center;">
+        <button class="btn secondary" onclick="app.forceUpdate()" style="font-size: 0.75rem; padding: 0.5rem; width: auto; margin: 0 auto; display: inline-flex; border: none; background: transparent;">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/></svg>
-          Forcer la mise à jour de l'application
+          Forcer la maj de l'app
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Import Confirmation -->
+  <div class="modal-overlay" id="modal-import-confirm">
+    <div class="modal-content">
+      <h2 class="modal-title">Confirmer l'importation</h2>
+      
+      <div id="import-confirm-msg" style="font-size: 0.9rem; color: var(--text-main); margin-bottom: 1.5rem; line-height: 1.5;">
+        <!-- Injecté dynamiquement -->
+      </div>
+      
+      <div class="form-group" id="import-options-container" style="display:flex; flex-direction:column; gap:0.75rem;">
+        <!-- Injecté dynamiquement -->
+      </div>
+      
+      <div class="modal-actions">
+        <button class="btn secondary" onclick="app.closeModal('modal-import-confirm')">Annuler</button>
+        <button class="btn primary" onclick="app.processImport()">Confirmer l'import</button>
       </div>
     </div>
   </div>

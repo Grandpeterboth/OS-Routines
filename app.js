@@ -722,7 +722,7 @@ class App {
     const val = document.querySelector('input[name="bulk-days-option"]:checked').value;
     const daysContainer = document.getElementById('form-bulk-days');
     if (val === 'set') {
-      daysContainer.style.display = 'flex';
+      daysContainer.style.display = 'grid';
       daysContainer.style.opacity = '1';
       daysContainer.style.pointerEvents = 'auto';
     } else {
@@ -1274,42 +1274,45 @@ class App {
   }
 
   showBackupModal() {
-    const data = { categories: this.categories, routines: this.routines, history: this.history };
-    document.getElementById('backup-data').value = JSON.stringify(data, null, 2);
+    const select = document.getElementById('export-target');
+    if (select) {
+      const editableCats = this.categories.filter(c => c.id !== 'cat_multi_decisions');
+      select.innerHTML = '<option value="all">Toutes les données (Rubriques, Routines, Historique)</option>' +
+                         editableCats.map(c => `<option value="${c.id}">Rubrique : ${c.name}</option>`).join('');
+    }
     document.getElementById('modal-backup').classList.add('active');
   }
 
-  copyBackup() {
-    const ta = document.getElementById('backup-data');
-    ta.select();
-    document.execCommand('copy');
-    alert("Données copiées !");
-  }
-
-  restoreBackup() {
-    try {
-      const data = JSON.parse(document.getElementById('backup-data').value);
-      if (!data.routines || !data.history) { alert("Format invalide."); return; }
-      this.categories = data.categories || [...defaultCategories];
-      // On retire type et options si ça vient du mauvais backup de la V2.5
-      this.routines   = data.routines.map(r => { delete r.type; delete r.options; return r; });
-      this.history    = data.history;
-      this.saveData();
-      this.closeModal('modal-backup');
-      this.render();
-      alert("Restauration réussie !");
-    } catch (e) {
-      alert("Erreur de restauration. JSON invalide.");
-    }
-  }
-
   exportToFile() {
-    const data = { categories: this.categories, routines: this.routines, history: this.history };
+    const target = document.getElementById('export-target').value;
+    let data;
+    let filename;
+    
+    if (target === 'all') {
+      data = { 
+        type: 'full',
+        categories: this.categories, 
+        routines: this.routines, 
+        history: this.history 
+      };
+      filename = `os-routines-full-backup-${this.getTodayStr()}.json`;
+    } else {
+      const category = this.categories.find(c => c.id === target);
+      if (!category) return;
+      const catRoutines = this.routines.filter(r => r.cat === target || r.displayCat === target);
+      data = {
+        type: 'category',
+        category: category,
+        routines: catRoutines
+      };
+      filename = `os-routines-rubrique-${category.name.replace(/\s+/g, '-')}-${this.getTodayStr()}.json`;
+    }
+
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `os-routines-backup-${this.getTodayStr()}.json`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1328,59 +1331,189 @@ class App {
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target.result);
-        if (!data.routines) { alert("Format de fichier invalide."); return; }
         
-        // --- LOGIQUE D'IMPORTATION FUSION (Ajout sans écrasement) ---
-        const catIdMap = {};
-        
-        // 1. Ajout des catégories importées
-        if (data.categories) {
-          data.categories.forEach(c => {
-            // Génération d'un nouvel ID unique pour éviter les conflits
-            const newId = 'cat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-            catIdMap[c.id] = newId;
-            c.id = newId;
-            this.categories.push(c);
-          });
+        if (!data.routines && !data.category) { 
+          if (data.categories && data.history) {
+            data.type = 'full';
+          } else {
+            alert("Format de fichier invalide."); 
+            return; 
+          }
         }
 
-        // 2. Ajout des routines importées
-        if (data.routines) {
-          const clusterIdMap = {};
-          data.routines.forEach(r => {
-            delete r.type; delete r.options; // nettoyage legacy
-            const newId = 'rtn_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-            
-            // Mise à jour de la référence vers la nouvelle catégorie si elle faisait partie de l'import
-            if (r.cat && catIdMap[r.cat]) {
-              r.cat = catIdMap[r.cat];
-            }
-            
-            // Mise à jour de la référence cluster pour lier les alternatives importées entre elles
-            if (r.clusterId) {
-              if (!clusterIdMap[r.clusterId]) {
-                clusterIdMap[r.clusterId] = 'cluster_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-              }
-              r.clusterId = clusterIdMap[r.clusterId];
-            }
-            
-            r.id = newId;
-            this.routines.push(r);
-          });
-        }
+        this.pendingImportData = data;
+        this.showImportConfirmModal(data);
 
-        // 3. L'historique n'est pas remplacé pour préserver la progression locale
-        this.saveData();
-        this.closeModal('modal-backup');
-        this.render();
-        alert("Fichier importé avec succès ! Les routines ont été ajoutées sans écraser vos données.");
       } catch (err) {
         alert("Erreur de lecture. Le fichier n'est pas un JSON valide.");
       }
-      // Réinitialiser l'input pour permettre de réimporter le même fichier si besoin
       event.target.value = "";
     };
     reader.readAsText(file);
+  }
+
+  showImportConfirmModal(data) {
+    const msgContainer = document.getElementById('import-confirm-msg');
+    const optsContainer = document.getElementById('import-options-container');
+    
+    if (data.type === 'category') {
+      const catName = data.category.name;
+      const routineCount = data.routines.length;
+      msgContainer.innerHTML = `Ce fichier contient la rubrique <strong>"${catName}"</strong> et ses ${routineCount} routine(s). Que souhaitez-vous faire ?`;
+      
+      const existingCat = this.categories.find(c => c.name === catName && c.id !== 'cat_multi_decisions');
+      
+      let optsHTML = '';
+      if (existingCat) {
+        optsHTML += `
+          <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
+            <input type="radio" name="import-mode" value="replace-cat" checked>
+            <div>
+              <strong>Remplacer ma rubrique "${catName}" existante</strong><br>
+              <span style="font-size:0.8rem; color:var(--text-muted);">Supprimera vos routines actuelles de cette rubrique pour mettre celles du fichier.</span>
+            </div>
+          </label>
+        `;
+      }
+      optsHTML += `
+        <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
+          <input type="radio" name="import-mode" value="add-cat" ${!existingCat ? 'checked' : ''}>
+          <div>
+            <strong>Ajouter comme une nouvelle rubrique</strong><br>
+            <span style="font-size:0.8rem; color:var(--text-muted);">Créera une nouvelle rubrique distincte (ex: "${catName} (1)").</span>
+          </div>
+        </label>
+      `;
+      optsContainer.innerHTML = optsHTML;
+      
+    } else {
+      const catCount = data.categories ? data.categories.length : 0;
+      const routineCount = data.routines ? data.routines.length : 0;
+      msgContainer.innerHTML = `Ce fichier est une sauvegarde complète (${catCount} rubriques, ${routineCount} routines). Que souhaitez-vous faire ?`;
+      
+      optsContainer.innerHTML = `
+        <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
+          <input type="radio" name="import-mode" value="replace-all">
+          <div>
+            <strong>Restaurer et remplacer toutes mes données</strong><br>
+            <span style="font-size:0.8rem; color:var(--text-muted);">Écrasera toutes vos rubriques, routines et votre historique actuel.</span>
+          </div>
+        </label>
+        <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
+          <input type="radio" name="import-mode" value="merge-all" checked>
+          <div>
+            <strong>Fusionner avec mes données actuelles</strong><br>
+            <span style="font-size:0.8rem; color:var(--text-muted);">Ajoutera les rubriques et routines sans écraser ce que vous avez déjà.</span>
+          </div>
+        </label>
+      `;
+    }
+    
+    this.closeModal('modal-backup');
+    document.getElementById('modal-import-confirm').classList.add('active');
+  }
+
+  processImport() {
+    const mode = document.querySelector('input[name="import-mode"]:checked').value;
+    const data = this.pendingImportData;
+    if (!data) return;
+    
+    if (mode === 'replace-all') {
+      this.categories = data.categories || [...defaultCategories];
+      if (!this.categories.find(c => c.id === 'cat_multi_decisions')) {
+        this.categories.unshift({
+          id: 'cat_multi_decisions',
+          name: 'Décisions Multi-Rubriques',
+          color: '#0052FF',
+          iconType: 'svg',
+          iconVal: 'boite'
+        });
+      }
+      this.routines = data.routines.map(r => { delete r.type; delete r.options; return r; });
+      this.history = data.history || {};
+      alert("Restauration complète réussie !");
+      
+    } else if (mode === 'merge-all') {
+      const catIdMap = {};
+      if (data.categories) {
+        data.categories.forEach(c => {
+          if (c.id === 'cat_multi_decisions') return;
+          const newId = 'cat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+          catIdMap[c.id] = newId;
+          c.id = newId;
+          this.categories.push(c);
+        });
+      }
+      if (data.routines) {
+        const clusterIdMap = {};
+        data.routines.forEach(r => {
+          delete r.type; delete r.options;
+          const newId = 'rtn_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+          if (r.cat && catIdMap[r.cat]) r.cat = catIdMap[r.cat];
+          if (r.displayCat && catIdMap[r.displayCat]) r.displayCat = catIdMap[r.displayCat];
+          if (r.clusterId) {
+            if (!clusterIdMap[r.clusterId]) clusterIdMap[r.clusterId] = 'cluster_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+            r.clusterId = clusterIdMap[r.clusterId];
+          }
+          r.id = newId;
+          this.routines.push(r);
+        });
+      }
+      alert("Fusion réussie !");
+      
+    } else if (mode === 'replace-cat') {
+      const catName = data.category.name;
+      const existingCat = this.categories.find(c => c.name === catName && c.id !== 'cat_multi_decisions');
+      if (existingCat) {
+        this.routines = this.routines.filter(r => r.cat !== existingCat.id);
+        Object.assign(existingCat, data.category, { id: existingCat.id });
+        
+        const clusterIdMap = {};
+        data.routines.forEach(r => {
+          delete r.type; delete r.options;
+          const newId = 'rtn_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+          r.cat = existingCat.id;
+          if (r.displayCat) r.displayCat = existingCat.id;
+          if (r.clusterId) {
+            if (!clusterIdMap[r.clusterId]) clusterIdMap[r.clusterId] = 'cluster_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+            r.clusterId = clusterIdMap[r.clusterId];
+          }
+          r.id = newId;
+          this.routines.push(r);
+        });
+        alert(`La rubrique "${catName}" a été remplacée avec succès !`);
+      }
+      
+    } else if (mode === 'add-cat') {
+      let newCatName = data.category.name;
+      if (this.categories.some(c => c.name === newCatName)) {
+        newCatName = newCatName + ' (1)';
+      }
+      
+      const newCatId = 'cat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+      const newCat = { ...data.category, id: newCatId, name: newCatName };
+      this.categories.push(newCat);
+      
+      const clusterIdMap = {};
+      data.routines.forEach(r => {
+        delete r.type; delete r.options;
+        const newId = 'rtn_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+        r.cat = newCatId;
+        if (r.displayCat) r.displayCat = newCatId;
+        if (r.clusterId) {
+          if (!clusterIdMap[r.clusterId]) clusterIdMap[r.clusterId] = 'cluster_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+          r.clusterId = clusterIdMap[r.clusterId];
+        }
+        r.id = newId;
+        this.routines.push(r);
+      });
+      alert(`La rubrique "${newCatName}" a été ajoutée avec succès !`);
+    }
+
+    this.pendingImportData = null;
+    this.saveData();
+    this.closeModal('modal-import-confirm');
+    this.render();
   }
 
   forceUpdate() {
