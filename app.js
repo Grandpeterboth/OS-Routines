@@ -149,20 +149,39 @@ class App {
   getSelectionsForToday() {
     const key = this.currentDateStr + '_selections';
     if (!this.history[key]) this.history[key] = {};
-    return this.history[key];
+    const selections = this.history[key];
+    
+    let changed = false;
+    for (const cid in selections) {
+      if (!Array.isArray(selections[cid])) {
+        selections[cid] = [selections[cid]];
+        changed = true;
+      }
+    }
+    if (changed) this.saveData();
+    
+    return selections;
   }
 
   openClusterChoice(clusterId) {
     const todayDayOfWeek = new Date(this.currentDateStr).getDay();
     const options = this.routines.filter(r => r.clusterId === clusterId && r.days.includes(todayDayOfWeek));
+    const selections = this.getSelectionsForToday();
+    const chosenArray = selections[clusterId] || [];
     
     const list = document.getElementById('cluster-choice-list');
     list.innerHTML = options.map(opt => {
       const count = this.getHistoricalCount(opt.id);
+      const isChosen = chosenArray.includes(opt.id);
+      const checkHtml = isChosen 
+        ? `<span style="color: var(--color-primary); display:flex; align-items:center; width:18px; height:18px;">${checkIcon.replace('<svg', '<svg width="18" height="18"')}</span>` 
+        : `<span style="width:18px; height:18px; border:2px solid var(--border-color); border-radius:4px; display:inline-block; flex-shrink:0;"></span>`;
+        
       return `
         <div class="cluster-choice-row">
-          <button class="cluster-choice-btn" onclick="app.selectClusterChoice('${clusterId}', '${opt.id}')">
-            <span>${opt.name}</span>
+          <button class="cluster-choice-btn" onclick="app.selectClusterChoice('${clusterId}', '${opt.id}')" style="display:flex; align-items:center; gap:0.5rem; justify-content:flex-start; ${isChosen ? 'border-color: var(--color-primary); background: rgba(0,82,255,0.05);' : ''}">
+            ${checkHtml}
+            <span style="flex:1; text-align:left;">${opt.name}</span>
             <span class="stat-badge">Fait ${count} fois</span>
           </button>
           <button class="reset-count-btn" onclick="app.resetRoutineCount('${clusterId}', '${opt.id}')" title="Réinitialiser le compteur de cette routine">${resetIcon}</button>
@@ -175,16 +194,34 @@ class App {
 
   selectClusterChoice(clusterId, routineId) {
     const selections = this.getSelectionsForToday();
-    selections[clusterId] = routineId;
+    let chosenArray = selections[clusterId] || [];
+    
+    if (chosenArray.includes(routineId)) {
+      chosenArray = chosenArray.filter(id => id !== routineId);
+    } else {
+      chosenArray.push(routineId);
+    }
+    
+    if (chosenArray.length === 0) {
+      delete selections[clusterId];
+    } else {
+      selections[clusterId] = chosenArray;
+    }
+    
     this.saveData();
-    this.closeModal('modal-cluster-choice');
+    this.openClusterChoice(clusterId);
     this.render();
   }
 
   resetClusterChoice(clusterId, routineId) {
     // Supprimer le choix
     const selections = this.getSelectionsForToday();
-    delete selections[clusterId];
+    if (selections[clusterId]) {
+      selections[clusterId] = selections[clusterId].filter(id => id !== routineId);
+      if (selections[clusterId].length === 0) {
+        delete selections[clusterId];
+      }
+    }
     
     // Décocher la tâche si elle était faite
     const completed = this.history[this.currentDateStr];
@@ -450,8 +487,8 @@ class App {
     this.categories.forEach(c => byCategory[c.id] = []);
     tasksToRenderNormally.forEach(t => { 
       let catId;
-      if (t.clusterId && selections[t.clusterId]) {
-        if (t.id !== selections[t.clusterId]) return; // Skip unchosen siblings
+      if (t.clusterId && selections[t.clusterId] && selections[t.clusterId].length > 0) {
+        if (!selections[t.clusterId].includes(t.id)) return; // Skip unchosen siblings
       }
       catId = byCategory[t.displayCat] ? t.displayCat : (byCategory[t.cat] ? t.cat : null);
       if (catId) byCategory[catId].push(t); 
@@ -481,17 +518,19 @@ class App {
         if (!task.clusterId) {
           html += this.buildSingleCardHtml(task, originalCat);
         } else {
-          if (processedClusters.includes(task.clusterId)) return; 
-          processedClusters.push(task.clusterId);
+          const chosenArray = selections[task.clusterId];
+          const hasChoices = chosenArray && chosenArray.length > 0;
           
-          const allSiblings = tasks.filter(t => t.clusterId === task.clusterId);
-          
-          if (allSiblings.length === 1 || !isTodayView) {
-            html += this.buildSingleCardHtml(task, originalCat);
+          if (hasChoices) {
+            html += this.buildSingleCardHtml(task, originalCat, task.clusterId);
           } else {
-            const chosenId = selections[task.clusterId];
-            if (chosenId) {
-              html += this.buildSingleCardHtml(task, originalCat, task.clusterId);
+            if (processedClusters.includes(task.clusterId)) return; 
+            processedClusters.push(task.clusterId);
+            
+            const allSiblings = tasks.filter(t => t.clusterId === task.clusterId);
+            
+            if (allSiblings.length === 1 || !isTodayView) {
+              html += this.buildSingleCardHtml(task, originalCat);
             } else {
               const siblingNames = allSiblings.map(s => s.name).join(' ou ');
               html += `
